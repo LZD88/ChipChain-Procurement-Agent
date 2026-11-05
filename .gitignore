@@ -9,6 +9,7 @@ __pycache__/
 build/
 dist/
 node_modules/
+frontend/.vite/
 .pytest_cache/
 .ruff_cache/
 .coverage
