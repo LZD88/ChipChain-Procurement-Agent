@@ -1,0 +1,64 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="部署依赖与启动检查" name="部署依赖与启动检查">
+    <mxGraphModel adaptiveColors="auto" grid="1" gridSize="10" page="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="A" value="配置环境与依赖&lt;br&gt;模型 / MySQL / ERP / 沙箱" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf2ff;strokeColor=#5b8bd9;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="40" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="B" value="准备外部服务&lt;br&gt;Java ERP / 图表 MCP / OpenSandbox" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3df;strokeColor=#d7a149;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="200" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="C" value="初始化 MySQL&lt;br&gt;scripts/init_mysql.py" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#94a3b8;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="640" y="200" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="D" value="启动 ERP MCP&lt;br&gt;server_main" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f6f1;strokeColor=#45a38b;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="360" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="E" value="启动 Web&lt;br&gt;start_web.py" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f6f1;strokeColor=#45a38b;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="520" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="F" value="FastAPI 启动阶段&lt;br&gt;MySQL 初始化 / MCP 预计算" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0ebff;strokeColor=#8b73c8;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="680" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="G" value="沙箱预热&lt;br&gt;失败可留到请求时创建" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3df;strokeColor=#d7a149;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="840" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="H" value="启动失败并检查依赖&lt;br&gt;不降级为内存检查点" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#94a3b8;fontColor=#172b4d;fontSize=14;spacing=8;ellipse;" vertex="1" parent="1">
+          <mxGeometry x="640" y="840" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="I" value="接受 Web 请求&lt;br&gt;验证 SSE 与真实业务链路" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf2ff;strokeColor=#5b8bd9;fontColor=#172b4d;fontSize=14;spacing=8;ellipse;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1000" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="edge0" source="A" target="B" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" source="A" target="C" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" source="B" target="D" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" source="D" target="E" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge4" source="C" target="E" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge5" source="E" target="F" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge6" source="F" target="G" value="关键初始化成功" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge7" source="F" target="H" value="关键初始化失败" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge8" source="G" target="I" value="继续启动" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

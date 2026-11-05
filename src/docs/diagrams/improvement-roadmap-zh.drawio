@@ -1,0 +1,37 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="后续建设顺序与验收" name="后续建设顺序与验收">
+    <mxGraphModel adaptiveColors="auto" grid="1" gridSize="10" page="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="A" value="P0 权限与订单一致性&lt;br&gt;会话归属 / 服务鉴权 / 幂等" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3df;strokeColor=#d7a149;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="40" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="B" value="P1 持久化与隔离&lt;br&gt;持久 Store / 技能权限 / 沙箱协调" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0ebff;strokeColor=#8b73c8;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="200" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="C" value="P1 完整交付与运行控制&lt;br&gt;鉴权下载 / 标题 / 取消 / 内容边界" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0ebff;strokeColor=#8b73c8;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="360" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="D" value="P2 外部能力与兼容&lt;br&gt;图表降级 / 独立表格工具绑定" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f6f1;strokeColor=#45a38b;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="520" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="E" value="持续以真实任务验收&lt;br&gt;权限测试 / 重放 / 恢复 / 成本延迟" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf2ff;strokeColor=#5b8bd9;fontColor=#172b4d;fontSize=14;spacing=8;ellipse;" vertex="1" parent="1">
+          <mxGeometry x="340" y="680" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="edge0" source="A" target="B" value="先解决越权与重复写入" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" source="B" target="C" value="再完善状态与交付" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" source="C" target="D" value="按需扩展能力" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" source="D" target="E" value="验证后对外承诺" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

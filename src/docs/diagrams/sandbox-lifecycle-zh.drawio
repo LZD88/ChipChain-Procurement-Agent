@@ -1,0 +1,79 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="用户沙箱获取与故障恢复" name="用户沙箱获取与故障恢复">
+    <mxGraphModel adaptiveColors="auto" grid="1" gridSize="10" page="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="A" value="按 user_id 获取环境" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf2ff;strokeColor=#5b8bd9;fontColor=#172b4d;fontSize=14;spacing=8;ellipse;" vertex="1" parent="1">
+          <mxGeometry x="340" y="40" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="B" value="内存代理缓存命中？" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0ebff;strokeColor=#8b73c8;fontColor=#172b4d;fontSize=14;spacing=8;rhombus;" vertex="1" parent="1">
+          <mxGeometry x="340" y="200" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="C" value="有可认领的预热沙箱？" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0ebff;strokeColor=#8b73c8;fontColor=#172b4d;fontSize=14;spacing=8;rhombus;" vertex="1" parent="1">
+          <mxGeometry x="40" y="360" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="D" value="数据库绑定可重连？" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0ebff;strokeColor=#8b73c8;fontColor=#172b4d;fontSize=14;spacing=8;rhombus;" vertex="1" parent="1">
+          <mxGeometry x="40" y="520" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="E" value="新建沙箱&lt;br&gt;安装依赖 / 保存绑定" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3df;strokeColor=#d7a149;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="680" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="F" value="返回用户级代理&lt;br&gt;同用户多会话共享" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f6f1;strokeColor=#45a38b;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="640" y="680" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="G" value="abefore_agent 健康检查" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0ebff;strokeColor=#8b73c8;fontColor=#172b4d;fontSize=14;spacing=8;rhombus;" vertex="1" parent="1">
+          <mxGeometry x="640" y="840" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="H" value="重建基础环境&lt;br&gt;上传 AGENTS.md" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3df;strokeColor=#d7a149;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="1000" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="I" value="代理替换内部 backend&lt;br&gt;调用方继续持有原代理" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f6f1;strokeColor=#45a38b;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="1160" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="J" value="进入本轮 Agent 执行&lt;br&gt;旧任意工作文件不自动迁移" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf2ff;strokeColor=#5b8bd9;fontColor=#172b4d;fontSize=14;spacing=8;ellipse;" vertex="1" parent="1">
+          <mxGeometry x="640" y="1320" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="edge0" source="A" target="B" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" source="B" target="F" value="命中" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" source="B" target="C" value="未命中" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" source="C" target="F" value="认领成功" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge4" source="C" target="D" value="不可用" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge5" source="D" target="F" value="重连成功" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge6" source="D" target="E" value="不可用" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge7" source="E" target="F" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge8" source="F" target="G" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge9" source="G" target="J" value="健康" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge10" source="G" target="H" value="失败" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge11" source="H" target="I" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge12" source="I" target="J" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

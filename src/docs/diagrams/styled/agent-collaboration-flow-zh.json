@@ -1,0 +1,777 @@
+{
+  "diagramData": {
+    "head": {
+      "version": "2.0.0",
+      "theme": {
+        "name": "default"
+      },
+      "rough": {
+        "name": "default"
+      }
+    },
+    "body": [
+      {
+        "id": "A",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 40,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">Vue 工作台<br/>请求与 SSE</div>",
+        "fill": {
+          "color": "#eaf2ff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "B",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 220,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">FastAPI<br/>登录 / 归属 / 输入检查</div>",
+        "fill": {
+          "color": "#e8f6f1"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "C",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 400,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">AgentLoader<br/>用户沙箱 + 请求执行图</div>",
+        "fill": {
+          "color": "#e8f6f1"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "D",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 580,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">主 Agent<br/>识别需求与任务委派</div>",
+        "fill": {
+          "color": "#f0ebff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "E",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 40,
+        "y": 760,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">采购分析子 Agent<br/>收集证据 / 计算 / 报告</div>",
+        "fill": {
+          "color": "#f0ebff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "F",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 800,
+        "y": 760,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">采购订单子 Agent<br/>准备订单参数</div>",
+        "fill": {
+          "color": "#f0ebff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "G",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 40,
+        "y": 940,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">分析执行工具<br/>ERP 查询 / 沙箱 / 图表 / 搜索</div>",
+        "fill": {
+          "color": "#fff3df"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "H",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 800,
+        "y": 940,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">人工审批<br/>同意后调用写工具</div>",
+        "fill": {
+          "color": "#fff3df"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "I",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 800,
+        "y": 1120,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">ERP MCP<br/>Java 订单创建 / 更新</div>",
+        "fill": {
+          "color": "#fff3df"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "J",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 1300,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">主 Agent 汇总<br/>分析结论 / 订单实际结果</div>",
+        "fill": {
+          "color": "#f0ebff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "K",
+        "type": "geometry",
+        "shape": "start-end",
+        "category": "flowchart",
+        "x": 420,
+        "y": 1480,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">Vue 工作台<br/>最终答复 / 图表 / 执行过程</div>",
+        "fill": {
+          "color": "#eaf2ff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "edge0",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "A",
+          "connection": "S"
+        },
+        "target": {
+          "id": "B",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge1",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "B",
+          "connection": "S"
+        },
+        "target": {
+          "id": "C",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge2",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "C",
+          "connection": "S"
+        },
+        "target": {
+          "id": "D",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge3",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "D",
+          "connection": "S"
+        },
+        "target": {
+          "id": "E",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            560,
+            700
+          ],
+          [
+            180,
+            700
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge4",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "D",
+          "connection": "S"
+        },
+        "target": {
+          "id": "F",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            560,
+            740
+          ],
+          [
+            940,
+            740
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge5",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "D",
+          "connection": "S"
+        },
+        "target": {
+          "id": "J",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            560,
+            700
+          ],
+          [
+            550,
+            700
+          ],
+          [
+            550,
+            1280
+          ],
+          [
+            560,
+            1280
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge6",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "E",
+          "connection": "S"
+        },
+        "target": {
+          "id": "G",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge7",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "G",
+          "connection": "S"
+        },
+        "target": {
+          "id": "J",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            180,
+            1280
+          ],
+          [
+            560,
+            1280
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge8",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "F",
+          "connection": "S"
+        },
+        "target": {
+          "id": "H",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge9",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "H",
+          "connection": "S"
+        },
+        "target": {
+          "id": "I",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge10",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "H",
+          "connection": "S"
+        },
+        "target": {
+          "id": "J",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            940,
+            1060
+          ],
+          [
+            560,
+            1060
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge11",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "I",
+          "connection": "S"
+        },
+        "target": {
+          "id": "J",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            940,
+            1280
+          ],
+          [
+            560,
+            1280
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge12",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "J",
+          "connection": "S"
+        },
+        "target": {
+          "id": "K",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge0-label",
+        "type": "text",
+        "x": 540.5,
+        "y": 165.5,
+        "width": 39,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">HTTP</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge1-label",
+        "type": "text",
+        "x": 526.0,
+        "y": 345.5,
+        "width": 68,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">检查通过</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge2-label",
+        "type": "text",
+        "x": 541.0,
+        "y": 525.5,
+        "width": 38,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">运行</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge3-label",
+        "type": "text",
+        "x": 336.0,
+        "y": 685.5,
+        "width": 68,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">分析任务</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge4-label",
+        "type": "text",
+        "x": 716.0,
+        "y": 725.5,
+        "width": 68,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">订单任务</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge5-label",
+        "type": "text",
+        "x": 516.0,
+        "y": 975.5,
+        "width": 68,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">直接答复</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge6-label",
+        "type": "text",
+        "x": 161.0,
+        "y": 885.5,
+        "width": 38,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">调用</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge7-label",
+        "type": "text",
+        "x": 336.0,
+        "y": 1265.5,
+        "width": 68,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">分析结果</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge8-label",
+        "type": "text",
+        "x": 898.5,
+        "y": 885.5,
+        "width": 83,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">执行前暂停</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge9-label",
+        "type": "text",
+        "x": 921.0,
+        "y": 1065.5,
+        "width": 38,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">同意</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge10-label",
+        "type": "text",
+        "x": 731.0,
+        "y": 1045.5,
+        "width": 38,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">拒绝</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge11-label",
+        "type": "text",
+        "x": 716.0,
+        "y": 1265.5,
+        "width": 68,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">业务结果</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge12-label",
+        "type": "text",
+        "x": 545.0,
+        "y": 1425.5,
+        "width": 30,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">SSE</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      }
+    ]
+  },
+  "viewportOption": "adapt",
+  "viewportSetting": null,
+  "search": " Vue 工作台 请求与 SSE   FastAPI 登录 / 归属 / 输入检查   AgentLoader 用户沙箱 + 请求执行图   主 Agent 识别需求与任务委派   采购分析子 Agent 收集证据 / 计算 / 报告   采购订单子 Agent 准备订单参数   分析执行工具 ERP 查询 / 沙箱 / 图表 / 搜索   人工审批 同意后调用写工具   ERP MCP Java 订单创建 / 更新   主 Agent 汇总 分析结论 / 订单实际结果   Vue 工作台 最终答复 / 图表 / 执行过程   HTTP   检查通过   运行   分析任务   订单任务   直接答复   调用   分析结果   执行前暂停   同意   拒绝   业务结果   SSE "
+}

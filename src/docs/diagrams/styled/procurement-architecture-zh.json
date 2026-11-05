@@ -1,0 +1,372 @@
+{
+  "diagramData": {
+    "head": {
+      "version": "2.0.0",
+      "theme": {
+        "name": "default"
+      },
+      "rough": {
+        "name": "default"
+      }
+    },
+    "body": [
+      {
+        "id": "layer0",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 40,
+        "y": 30,
+        "width": 940,
+        "height": 182,
+        "round": 8,
+        "fill": {
+          "color": "#F6F8FC"
+        },
+        "stroke": {
+          "color": "#D8E0EA",
+          "width": 1
+        }
+      },
+      {
+        "id": "module0_0",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 60,
+        "y": 80,
+        "width": 900,
+        "height": 116,
+        "round": 6,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">Vue 3 工作台<br/>登录注册 / 会话列表<br/>SSE 答复 / 图表预览<br/>补充信息 / 人工审批</div>",
+        "fill": {
+          "color": "#eaf2ff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        }
+      },
+      {
+        "id": "layer1",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 40,
+        "y": 230,
+        "width": 940,
+        "height": 182,
+        "round": 8,
+        "fill": {
+          "color": "#F6F8FC"
+        },
+        "stroke": {
+          "color": "#D8E0EA",
+          "width": 1
+        }
+      },
+      {
+        "id": "module1_0",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 60,
+        "y": 280,
+        "width": 440,
+        "height": 116,
+        "round": 6,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">FastAPI<br/>Cookie 认证 / 会话归属<br/>NeMo 输入安全检查<br/>Chat / Resume / History</div>",
+        "fill": {
+          "color": "#e8f6f1"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        }
+      },
+      {
+        "id": "module1_1",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 520,
+        "y": 280,
+        "width": 440,
+        "height": 116,
+        "round": 6,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">AgentLoader<br/>MCP 工具预计算<br/>按请求创建执行图</div>",
+        "fill": {
+          "color": "#e8f6f1"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        }
+      },
+      {
+        "id": "layer2",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 40,
+        "y": 430,
+        "width": 940,
+        "height": 182,
+        "round": 8,
+        "fill": {
+          "color": "#F6F8FC"
+        },
+        "stroke": {
+          "color": "#D8E0EA",
+          "width": 1
+        }
+      },
+      {
+        "id": "module2_0",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 60,
+        "y": 480,
+        "width": 900,
+        "height": 116,
+        "round": 6,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">DeepAgents / LangGraph<br/>主 Agent：协调与汇总<br/>分析子 Agent：查询与分析<br/>订单子 Agent：受控写入</div>",
+        "fill": {
+          "color": "#f0ebff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        }
+      },
+      {
+        "id": "layer3",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 40,
+        "y": 630,
+        "width": 940,
+        "height": 182,
+        "round": 8,
+        "fill": {
+          "color": "#F6F8FC"
+        },
+        "stroke": {
+          "color": "#D8E0EA",
+          "width": 1
+        }
+      },
+      {
+        "id": "module3_0",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 60,
+        "y": 680,
+        "width": 286,
+        "height": 116,
+        "round": 6,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">ERP MCP<br/>Java 芯链 REST API</div>",
+        "fill": {
+          "color": "#fff3df"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        }
+      },
+      {
+        "id": "module3_1",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 366,
+        "y": 680,
+        "width": 286,
+        "height": 116,
+        "round": 6,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">分析工具<br/>图表 MCP / generate_chart<br/>博查搜索 / 网页采集</div>",
+        "fill": {
+          "color": "#fff3df"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        }
+      },
+      {
+        "id": "module3_2",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 672,
+        "y": 680,
+        "width": 286,
+        "height": 116,
+        "round": 6,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">模型服务<br/>deepseek-flash<br/>Agent / 摘要 / 输入审查</div>",
+        "fill": {
+          "color": "#fff3df"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        }
+      },
+      {
+        "id": "layer4",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 40,
+        "y": 830,
+        "width": 940,
+        "height": 182,
+        "round": 8,
+        "fill": {
+          "color": "#F6F8FC"
+        },
+        "stroke": {
+          "color": "#D8E0EA",
+          "width": 1
+        }
+      },
+      {
+        "id": "module4_0",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 60,
+        "y": 880,
+        "width": 900,
+        "height": 116,
+        "round": 6,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">CompositeBackend<br/>OpenSandbox：用户级沙箱<br/>StoreBackend：偏好与技能</div>",
+        "fill": {
+          "color": "#e8f6f1"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        }
+      },
+      {
+        "id": "layer5",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 40,
+        "y": 1030,
+        "width": 940,
+        "height": 182,
+        "round": 8,
+        "fill": {
+          "color": "#F6F8FC"
+        },
+        "stroke": {
+          "color": "#D8E0EA",
+          "width": 1
+        }
+      },
+      {
+        "id": "module5_0",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 60,
+        "y": 1080,
+        "width": 286,
+        "height": 116,
+        "round": 6,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">MySQL agent_db<br/>检查点 / 展示历史<br/>账号 / 会话 / 沙箱绑定</div>",
+        "fill": {
+          "color": "#f1f5f9"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        }
+      },
+      {
+        "id": "module5_1",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 366,
+        "y": 1080,
+        "width": 286,
+        "height": 116,
+        "round": 6,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">InMemoryStore<br/>偏好 / 共享技能（进程内）</div>",
+        "fill": {
+          "color": "#f1f5f9"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        }
+      },
+      {
+        "id": "module5_2",
+        "type": "geometry",
+        "shape": "rounded-rect",
+        "x": 672,
+        "y": 1080,
+        "width": 286,
+        "height": 116,
+        "round": 6,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">ERP 业务库<br/>物料 / 供应商 / 订单 / 库存</div>",
+        "fill": {
+          "color": "#f1f5f9"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        }
+      },
+      {
+        "id": "layer0-label",
+        "type": "text",
+        "x": 60,
+        "y": 38,
+        "width": 900,
+        "height": 32,
+        "html": "<div style=\"font-size:19px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">用户交互层</div>"
+      },
+      {
+        "id": "layer1-label",
+        "type": "text",
+        "x": 60,
+        "y": 238,
+        "width": 900,
+        "height": 32,
+        "html": "<div style=\"font-size:19px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">应用接口层</div>"
+      },
+      {
+        "id": "layer2-label",
+        "type": "text",
+        "x": 60,
+        "y": 438,
+        "width": 900,
+        "height": 32,
+        "html": "<div style=\"font-size:19px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">智能编排层</div>"
+      },
+      {
+        "id": "layer3-label",
+        "type": "text",
+        "x": 60,
+        "y": 638,
+        "width": 900,
+        "height": 32,
+        "html": "<div style=\"font-size:19px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">工具与业务集成层</div>"
+      },
+      {
+        "id": "layer4-label",
+        "type": "text",
+        "x": 60,
+        "y": 838,
+        "width": 900,
+        "height": 32,
+        "html": "<div style=\"font-size:19px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">执行与文件后端</div>"
+      },
+      {
+        "id": "layer5-label",
+        "type": "text",
+        "x": 60,
+        "y": 1038,
+        "width": 900,
+        "height": 32,
+        "html": "<div style=\"font-size:19px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">状态与业务数据</div>"
+      }
+    ]
+  },
+  "viewportOption": "adapt",
+  "viewportSetting": null,
+  "search": "  Vue 3 工作台 登录注册 / 会话列表 SSE 答复 / 图表预览 补充信息 / 人工审批    FastAPI Cookie 认证 / 会话归属 NeMo 输入安全检查 Chat / Resume / History   AgentLoader MCP 工具预计算 按请求创建执行图    DeepAgents / LangGraph 主 Agent：协调与汇总 分析子 Agent：查询与分析 订单子 Agent：受控写入    ERP MCP Java 芯链 REST API   分析工具 图表 MCP / generate_chart 博查搜索 / 网页采集   模型服务 deepseek-flash Agent / 摘要 / 输入审查    CompositeBackend OpenSandbox：用户级沙箱 StoreBackend：偏好与技能    MySQL agent_db 检查点 / 展示历史 账号 / 会话 / 沙箱绑定   InMemoryStore 偏好 / 共享技能（进程内）   ERP 业务库 物料 / 供应商 / 订单 / 库存   用户交互层   应用接口层   智能编排层   工具与业务集成层   执行与文件后端   状态与业务数据 "
+}

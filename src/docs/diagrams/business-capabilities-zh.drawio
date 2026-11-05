@@ -1,0 +1,55 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="采购业务目标与系统边界" name="采购业务目标与系统边界">
+    <mxGraphModel adaptiveColors="auto" grid="1" gridSize="10" page="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="A" value="采购用户&lt;br&gt;提出问题或业务任务" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf2ff;strokeColor=#5b8bd9;fontColor=#172b4d;fontSize=14;spacing=8;ellipse;" vertex="1" parent="1">
+          <mxGeometry x="340" y="40" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="B" value="分析场景&lt;br&gt;比价 / 行情 / 采购策略" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0ebff;strokeColor=#8b73c8;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="200" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="C" value="订单场景&lt;br&gt;查询 / 信息补齐 / 参数准备" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0ebff;strokeColor=#8b73c8;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="200" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="D" value="知识与偏好&lt;br&gt;技能复用 / 用户上下文" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0ebff;strokeColor=#8b73c8;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="640" y="200" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="E" value="证据与计算&lt;br&gt;ERP / 搜索 / 沙箱" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f6f1;strokeColor=#45a38b;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="360" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="F" value="人工审批&lt;br&gt;同意后执行 ERP 写入" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3df;strokeColor=#d7a149;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="360" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="G" value="可读业务结果&lt;br&gt;结论 / 图表 / 实际订单结果" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf2ff;strokeColor=#5b8bd9;fontColor=#172b4d;fontSize=14;spacing=8;ellipse;" vertex="1" parent="1">
+          <mxGeometry x="340" y="520" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="edge0" source="A" target="B" value="分析" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" source="A" target="C" value="订单" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" source="A" target="D" value="复用" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" source="B" target="E" value="取证" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge4" source="C" target="F" value="需要写入" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge5" source="D" target="G" value="提供方法与上下文" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge6" source="E" target="G" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge7" source="F" target="G" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

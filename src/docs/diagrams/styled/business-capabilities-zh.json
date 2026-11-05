@@ -1,0 +1,456 @@
+{
+  "diagramData": {
+    "head": {
+      "version": "2.0.0",
+      "theme": {
+        "name": "default"
+      },
+      "rough": {
+        "name": "default"
+      }
+    },
+    "body": [
+      {
+        "id": "A",
+        "type": "geometry",
+        "shape": "start-end",
+        "category": "flowchart",
+        "x": 420,
+        "y": 40,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">采购用户<br/>提出问题或业务任务</div>",
+        "fill": {
+          "color": "#eaf2ff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "B",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 40,
+        "y": 220,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">分析场景<br/>比价 / 行情 / 采购策略</div>",
+        "fill": {
+          "color": "#f0ebff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "C",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 220,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">订单场景<br/>查询 / 信息补齐 / 参数准备</div>",
+        "fill": {
+          "color": "#f0ebff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "D",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 800,
+        "y": 220,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">知识与偏好<br/>技能复用 / 用户上下文</div>",
+        "fill": {
+          "color": "#f0ebff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "E",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 40,
+        "y": 400,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">证据与计算<br/>ERP / 搜索 / 沙箱</div>",
+        "fill": {
+          "color": "#e8f6f1"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "F",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 400,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">人工审批<br/>同意后执行 ERP 写入</div>",
+        "fill": {
+          "color": "#fff3df"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "G",
+        "type": "geometry",
+        "shape": "start-end",
+        "category": "flowchart",
+        "x": 420,
+        "y": 580,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">可读业务结果<br/>结论 / 图表 / 实际订单结果</div>",
+        "fill": {
+          "color": "#eaf2ff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "edge0",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "A",
+          "connection": "S"
+        },
+        "target": {
+          "id": "B",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            560,
+            160
+          ],
+          [
+            180,
+            160
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge1",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "A",
+          "connection": "S"
+        },
+        "target": {
+          "id": "C",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge2",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "A",
+          "connection": "S"
+        },
+        "target": {
+          "id": "D",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            560,
+            160
+          ],
+          [
+            940,
+            160
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge3",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "B",
+          "connection": "S"
+        },
+        "target": {
+          "id": "E",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge4",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "C",
+          "connection": "S"
+        },
+        "target": {
+          "id": "F",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge5",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "D",
+          "connection": "S"
+        },
+        "target": {
+          "id": "G",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            940,
+            560
+          ],
+          [
+            560,
+            560
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge6",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "E",
+          "connection": "S"
+        },
+        "target": {
+          "id": "G",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            180,
+            560
+          ],
+          [
+            560,
+            560
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge7",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "F",
+          "connection": "S"
+        },
+        "target": {
+          "id": "G",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge0-label",
+        "type": "text",
+        "x": 351.0,
+        "y": 145.5,
+        "width": 38,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">分析</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge1-label",
+        "type": "text",
+        "x": 541.0,
+        "y": 165.5,
+        "width": 38,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">订单</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge2-label",
+        "type": "text",
+        "x": 731.0,
+        "y": 145.5,
+        "width": 38,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">复用</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge3-label",
+        "type": "text",
+        "x": 161.0,
+        "y": 345.5,
+        "width": 38,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">取证</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge4-label",
+        "type": "text",
+        "x": 526.0,
+        "y": 345.5,
+        "width": 68,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">需要写入</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge5-label",
+        "type": "text",
+        "x": 762.0,
+        "y": 545.5,
+        "width": 128,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">提供方法与上下文</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      }
+    ]
+  },
+  "viewportOption": "adapt",
+  "viewportSetting": null,
+  "search": " 采购用户 提出问题或业务任务   分析场景 比价 / 行情 / 采购策略   订单场景 查询 / 信息补齐 / 参数准备   知识与偏好 技能复用 / 用户上下文   证据与计算 ERP / 搜索 / 沙箱   人工审批 同意后执行 ERP 写入   可读业务结果 结论 / 图表 / 实际订单结果   分析   订单   复用   取证   需要写入   提供方法与上下文 "
+}

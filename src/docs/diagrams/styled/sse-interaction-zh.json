@@ -1,0 +1,567 @@
+{
+  "diagramData": {
+    "head": {
+      "version": "2.0.0",
+      "theme": {
+        "name": "default"
+      },
+      "rough": {
+        "name": "default"
+      }
+    },
+    "body": [
+      {
+        "id": "A",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 40,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">浏览器 fetch POST<br/>Cookie + 请求正文</div>",
+        "fill": {
+          "color": "#eaf2ff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "B",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 220,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">FastAPI<br/>认证 / 归属 / 输入检查</div>",
+        "fill": {
+          "color": "#e8f6f1"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "C",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 400,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">Agent astream<br/>模型消息 + 图状态</div>",
+        "fill": {
+          "color": "#f0ebff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "D",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 580,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">SSE 事件<br/>token / tool_* / interrupt</div>",
+        "fill": {
+          "color": "#fff3df"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "E",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 40,
+        "y": 760,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">前端按调用 ID 关联<br/>最终答复 / 执行过程 / 图片</div>",
+        "fill": {
+          "color": "#eaf2ff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "F",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 800,
+        "y": 760,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">人工中断组件<br/>补充信息或同意拒绝</div>",
+        "fill": {
+          "color": "#eaf2ff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "G",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 800,
+        "y": 940,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">POST resume<br/>再次校验后恢复</div>",
+        "fill": {
+          "color": "#e8f6f1"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "H",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 40,
+        "y": 940,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">展示消息入 MySQL<br/>会话历史重新加载</div>",
+        "fill": {
+          "color": "#f1f5f9"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "I",
+        "type": "geometry",
+        "shape": "start-end",
+        "category": "flowchart",
+        "x": 420,
+        "y": 1120,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">done / error<br/>本轮结束或显示失败</div>",
+        "fill": {
+          "color": "#eaf2ff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "edge0",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "A",
+          "connection": "S"
+        },
+        "target": {
+          "id": "B",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge1",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "B",
+          "connection": "S"
+        },
+        "target": {
+          "id": "C",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge2",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "C",
+          "connection": "S"
+        },
+        "target": {
+          "id": "D",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge3",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "D",
+          "connection": "S"
+        },
+        "target": {
+          "id": "E",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            560,
+            700
+          ],
+          [
+            180,
+            700
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge4",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "D",
+          "connection": "S"
+        },
+        "target": {
+          "id": "F",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            560,
+            740
+          ],
+          [
+            940,
+            740
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge5",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "F",
+          "connection": "S"
+        },
+        "target": {
+          "id": "G",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge6",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "G",
+          "connection": "N"
+        },
+        "target": {
+          "id": "C",
+          "connection": "S",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            940,
+            920
+          ],
+          [
+            710,
+            920
+          ],
+          [
+            710,
+            520
+          ],
+          [
+            560,
+            520
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge7",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "E",
+          "connection": "S"
+        },
+        "target": {
+          "id": "H",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge8",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "D",
+          "connection": "S"
+        },
+        "target": {
+          "id": "I",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            560,
+            700
+          ],
+          [
+            550,
+            700
+          ],
+          [
+            550,
+            1100
+          ],
+          [
+            560,
+            1100
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge1-label",
+        "type": "text",
+        "x": 541.0,
+        "y": 345.5,
+        "width": 38,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">通过</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge2-label",
+        "type": "text",
+        "x": 541.0,
+        "y": 525.5,
+        "width": 38,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">流式</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge3-label",
+        "type": "text",
+        "x": 237.5,
+        "y": 685.5,
+        "width": 113,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">文本与工具事件</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge4-label",
+        "type": "text",
+        "x": 715.5,
+        "y": 725.5,
+        "width": 69,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">interrupt</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge5-label",
+        "type": "text",
+        "x": 906.0,
+        "y": 885.5,
+        "width": 68,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">用户操作</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge6-label",
+        "type": "text",
+        "x": 666.5,
+        "y": 775.0,
+        "width": 87,
+        "height": 50,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">Command<br/>resume</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge7-label",
+        "type": "text",
+        "x": 131.0,
+        "y": 885.5,
+        "width": 98,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">流结束时保存</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge8-label",
+        "type": "text",
+        "x": 516.0,
+        "y": 885.5,
+        "width": 68,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">终止事件</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      }
+    ]
+  },
+  "viewportOption": "adapt",
+  "viewportSetting": null,
+  "search": " 浏览器 fetch POST Cookie + 请求正文   FastAPI 认证 / 归属 / 输入检查   Agent astream 模型消息 + 图状态   SSE 事件 token / tool_* / interrupt   前端按调用 ID 关联 最终答复 / 执行过程 / 图片   人工中断组件 补充信息或同意拒绝   POST resume 再次校验后恢复   展示消息入 MySQL 会话历史重新加载   done / error 本轮结束或显示失败   通过   流式   文本与工具事件   interrupt   用户操作   Command resume   流结束时保存   终止事件 "
+}

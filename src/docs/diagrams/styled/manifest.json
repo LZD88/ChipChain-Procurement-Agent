@@ -1,0 +1,114 @@
+[
+  {
+    "name": "procurement-architecture-zh",
+    "section": "2.2",
+    "nodes": 17,
+    "edges": 0,
+    "labels": 6
+  },
+  {
+    "name": "agent-collaboration-flow-zh",
+    "section": "3.2",
+    "nodes": 11,
+    "edges": 13,
+    "labels": 13
+  },
+  {
+    "name": "order-approval-flow-zh",
+    "section": "4.3",
+    "nodes": 11,
+    "edges": 12,
+    "labels": 7
+  },
+  {
+    "name": "chart-generation-flow-zh",
+    "section": "5.3",
+    "nodes": 10,
+    "edges": 11,
+    "labels": 7
+  },
+  {
+    "name": "chart-startup-flow-zh",
+    "section": "5.3",
+    "nodes": 6,
+    "edges": 6,
+    "labels": 5
+  },
+  {
+    "name": "input-guard-flow-zh",
+    "section": "9.2",
+    "nodes": 9,
+    "edges": 9,
+    "labels": 9
+  },
+  {
+    "name": "input-guard-resume-flow-zh",
+    "section": "9.2",
+    "nodes": 8,
+    "edges": 8,
+    "labels": 8
+  },
+  {
+    "name": "business-capabilities-zh",
+    "section": "1",
+    "nodes": 7,
+    "edges": 8,
+    "labels": 6
+  },
+  {
+    "name": "skills-context-flow-zh",
+    "section": "6.2",
+    "nodes": 8,
+    "edges": 8,
+    "labels": 2
+  },
+  {
+    "name": "storage-responsibilities-zh",
+    "section": "7.1",
+    "nodes": 8,
+    "edges": 7,
+    "labels": 7
+  },
+  {
+    "name": "sandbox-lifecycle-zh",
+    "section": "8.2",
+    "nodes": 10,
+    "edges": 13,
+    "labels": 8
+  },
+  {
+    "name": "sse-interaction-zh",
+    "section": "10.3",
+    "nodes": 9,
+    "edges": 9,
+    "labels": 8
+  },
+  {
+    "name": "design-value-map-zh",
+    "section": "11",
+    "nodes": 8,
+    "edges": 9,
+    "labels": 3
+  },
+  {
+    "name": "module-dependencies-zh",
+    "section": "12",
+    "nodes": 8,
+    "edges": 8,
+    "labels": 6
+  },
+  {
+    "name": "startup-dependencies-zh",
+    "section": "13",
+    "nodes": 9,
+    "edges": 9,
+    "labels": 3
+  },
+  {
+    "name": "improvement-roadmap-zh",
+    "section": "14",
+    "nodes": 5,
+    "edges": 4,
+    "labels": 4
+  }
+]

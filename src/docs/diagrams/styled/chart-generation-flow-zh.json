@@ -1,0 +1,612 @@
+{
+  "diagramData": {
+    "head": {
+      "version": "2.0.0",
+      "theme": {
+        "name": "default"
+      },
+      "rough": {
+        "name": "default"
+      }
+    },
+    "body": [
+      {
+        "id": "A",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 40,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">分析 Agent 选择类型<br/>准备数据 / 按需读参数</div>",
+        "fill": {
+          "color": "#f0ebff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "B",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 220,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">generate_chart<br/>类型 + 图表参数</div>",
+        "fill": {
+          "color": "#f0ebff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "C",
+        "type": "geometry",
+        "shape": "decision",
+        "category": "flowchart",
+        "x": 420,
+        "y": 400,
+        "width": 280,
+        "height": 120,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">本地校验通过？</div>",
+        "fill": {
+          "color": "#e8f6f1"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "D",
+        "type": "geometry",
+        "shape": "start-end",
+        "category": "flowchart",
+        "x": 40,
+        "y": 400,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">返回字段错误<br/>本次不调用远端</div>",
+        "fill": {
+          "color": "#f1f5f9"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "E",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 580,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">按类型路由<br/>调用对应 MCP 工具</div>",
+        "fill": {
+          "color": "#fff3df"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "F",
+        "type": "geometry",
+        "shape": "decision",
+        "category": "flowchart",
+        "x": 420,
+        "y": 760,
+        "width": 280,
+        "height": 120,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">远端调用结果</div>",
+        "fill": {
+          "color": "#fff3df"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "G",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 420,
+        "y": 940,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">default 主题重试一次<br/>只处理已知 dark 故障</div>",
+        "fill": {
+          "color": "#fff3df"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "H",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 40,
+        "y": 1120,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">保留 content 与 artifact<br/>回退成功时附主题提示</div>",
+        "fill": {
+          "color": "#e8f6f1"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "I",
+        "type": "geometry",
+        "shape": "start-end",
+        "category": "flowchart",
+        "x": 800,
+        "y": 1120,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">返回明确失败<br/>不伪造图片或成功状态</div>",
+        "fill": {
+          "color": "#f1f5f9"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "J",
+        "type": "geometry",
+        "shape": "start-end",
+        "category": "flowchart",
+        "x": 40,
+        "y": 1300,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">Agent 汇总 / 前端展示</div>",
+        "fill": {
+          "color": "#eaf2ff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "edge0",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "A",
+          "connection": "S"
+        },
+        "target": {
+          "id": "B",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge1",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "B",
+          "connection": "S"
+        },
+        "target": {
+          "id": "C",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge2",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "C",
+          "connection": "W"
+        },
+        "target": {
+          "id": "D",
+          "connection": "E",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            340,
+            460
+          ],
+          [
+            340,
+            450
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge3",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "C",
+          "connection": "S"
+        },
+        "target": {
+          "id": "E",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge4",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "E",
+          "connection": "S"
+        },
+        "target": {
+          "id": "F",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge5",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "F",
+          "connection": "S"
+        },
+        "target": {
+          "id": "H",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            560,
+            900
+          ],
+          [
+            180,
+            900
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge6",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "F",
+          "connection": "S"
+        },
+        "target": {
+          "id": "G",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge7",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "F",
+          "connection": "S"
+        },
+        "target": {
+          "id": "I",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            560,
+            900
+          ],
+          [
+            940,
+            900
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge8",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "G",
+          "connection": "S"
+        },
+        "target": {
+          "id": "H",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            560,
+            1100
+          ],
+          [
+            180,
+            1100
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge9",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "G",
+          "connection": "S"
+        },
+        "target": {
+          "id": "I",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [
+          [
+            560,
+            1060
+          ],
+          [
+            930,
+            1060
+          ],
+          [
+            930,
+            1100
+          ],
+          [
+            940,
+            1100
+          ]
+        ],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge10",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "H",
+          "connection": "S"
+        },
+        "target": {
+          "id": "J",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge2-label",
+        "type": "text",
+        "x": 368.5,
+        "y": 445.5,
+        "width": 23,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">否</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge3-label",
+        "type": "text",
+        "x": 548.5,
+        "y": 535.5,
+        "width": 23,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">是</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge5-label",
+        "type": "text",
+        "x": 351.0,
+        "y": 885.5,
+        "width": 38,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">成功</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge6-label",
+        "type": "text",
+        "x": 511.0,
+        "y": 901.5,
+        "width": 98,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">特定兼容错误</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge7-label",
+        "type": "text",
+        "x": 716.0,
+        "y": 885.5,
+        "width": 68,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">其他失败</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge8-label",
+        "type": "text",
+        "x": 336.0,
+        "y": 1085.5,
+        "width": 68,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">重试成功</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge9-label",
+        "type": "text",
+        "x": 711.0,
+        "y": 1045.5,
+        "width": 68,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">重试失败</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      }
+    ]
+  },
+  "viewportOption": "adapt",
+  "viewportSetting": null,
+  "search": " 分析 Agent 选择类型 准备数据 / 按需读参数   generate_chart 类型 + 图表参数   本地校验通过？   返回字段错误 本次不调用远端   按类型路由 调用对应 MCP 工具   远端调用结果   default 主题重试一次 只处理已知 dark 故障   保留 content 与 artifact 回退成功时附主题提示   返回明确失败 不伪造图片或成功状态   Agent 汇总 / 前端展示   否   是   成功   特定兼容错误   其他失败   重试成功   重试失败 "
+}

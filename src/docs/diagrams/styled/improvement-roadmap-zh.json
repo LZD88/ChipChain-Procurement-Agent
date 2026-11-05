@@ -1,0 +1,268 @@
+{
+  "diagramData": {
+    "head": {
+      "version": "2.0.0",
+      "theme": {
+        "name": "default"
+      },
+      "rough": {
+        "name": "default"
+      }
+    },
+    "body": [
+      {
+        "id": "A",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 40,
+        "y": 40,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">P0 权限与订单一致性<br/>会话归属 / 服务鉴权 / 幂等</div>",
+        "fill": {
+          "color": "#fff3df"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "B",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 40,
+        "y": 220,
+        "width": 280,
+        "height": 120,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">P1 持久化与隔离<br/>持久 Store / 技能权限 / 沙箱<br/>协调</div>",
+        "fill": {
+          "color": "#f0ebff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "C",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 40,
+        "y": 400,
+        "width": 280,
+        "height": 120,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">P1 完整交付与运行控制<br/>鉴权下载 / 标题 / 取消 / 内容<br/>边界</div>",
+        "fill": {
+          "color": "#f0ebff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "D",
+        "type": "geometry",
+        "shape": "process",
+        "category": "flowchart",
+        "x": 40,
+        "y": 580,
+        "width": 280,
+        "height": 100,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">P2 外部能力与兼容<br/>图表降级 / 独立表格工具绑定</div>",
+        "fill": {
+          "color": "#e8f6f1"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "E",
+        "type": "geometry",
+        "shape": "start-end",
+        "category": "flowchart",
+        "x": 40,
+        "y": 760,
+        "width": 280,
+        "height": 120,
+        "html": "<div style=\"font-size:18px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">持续以真实任务验收<br/>权限测试 / 重放 / 恢复 / 成本<br/>延迟</div>",
+        "fill": {
+          "color": "#eaf2ff"
+        },
+        "stroke": {
+          "color": "#AAB8C8",
+          "width": 1
+        },
+        "defaultContentStyle": {
+          "color": "#172B4D",
+          "fontSize": 18
+        }
+      },
+      {
+        "id": "edge0",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "A",
+          "connection": "S"
+        },
+        "target": {
+          "id": "B",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge1",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "B",
+          "connection": "S"
+        },
+        "target": {
+          "id": "C",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge2",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "C",
+          "connection": "S"
+        },
+        "target": {
+          "id": "D",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge3",
+        "type": "line",
+        "shape": "straight",
+        "source": {
+          "id": "D",
+          "connection": "S"
+        },
+        "target": {
+          "id": "E",
+          "connection": "N",
+          "marker": "arrow"
+        },
+        "controlPoints": [],
+        "stroke": {
+          "color": "#738399",
+          "width": 1.5
+        }
+      },
+      {
+        "id": "edge0-label",
+        "type": "text",
+        "x": 108.5,
+        "y": 155.0,
+        "width": 143,
+        "height": 50,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">先解决越权与重复写<br/>入</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge1-label",
+        "type": "text",
+        "x": 116.0,
+        "y": 355.5,
+        "width": 128,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">再完善状态与交付</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge2-label",
+        "type": "text",
+        "x": 131.0,
+        "y": 535.5,
+        "width": 98,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">按需扩展能力</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      },
+      {
+        "id": "edge3-label",
+        "type": "text",
+        "x": 123.5,
+        "y": 705.5,
+        "width": 113,
+        "height": 29,
+        "html": "<div style=\"font-size:15px;line-height:1.4;text-align:center;font-weight:400;color:#172B4D;text-shadow:none;\">验证后对外承诺</div>",
+        "fill": {
+          "color": "#FFFFFF"
+        },
+        "defaultContentStyle": {
+          "color": "#334155",
+          "fontSize": 15
+        }
+      }
+    ]
+  },
+  "viewportOption": "adapt",
+  "viewportSetting": null,
+  "search": " P0 权限与订单一致性 会话归属 / 服务鉴权 / 幂等   P1 持久化与隔离 持久 Store / 技能权限 / 沙箱 协调   P1 完整交付与运行控制 鉴权下载 / 标题 / 取消 / 内容 边界   P2 外部能力与兼容 图表降级 / 独立表格工具绑定   持续以真实任务验收 权限测试 / 重放 / 恢复 / 成本 延迟   先解决越权与重复写 入   再完善状态与交付   按需扩展能力   验证后对外承诺 "
+}

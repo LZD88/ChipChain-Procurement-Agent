@@ -1,0 +1,114 @@
+[
+  {
+    "name": "procurement-architecture-zh",
+    "type": "architecturediagram",
+    "section": "2.2",
+    "dsl": "+ 用户交互层\n    - Vue 3 工作台\n        * 登录注册 / 会话列表\n        * SSE 答复 / 图表预览\n        * 补充信息 / 人工审批\n+ 应用接口层\n    - FastAPI\n        * Cookie 认证 / 会话归属\n        * NeMo 输入安全检查\n        * Chat / Resume / History\n    - AgentLoader\n        * MCP 工具预计算\n        * 按请求创建执行图\n+ 智能编排层\n    - DeepAgents / LangGraph\n        * 主 Agent：协调与汇总\n        * 分析子 Agent：查询与分析\n        * 订单子 Agent：受控写入\n+ 工具与业务集成层\n    - ERP MCP\n        * Java 芯链 REST API\n    - 分析工具\n        * 图表 MCP / generate_chart\n        * 博查搜索 / 网页采集\n    - 模型服务\n        * deepseek-flash\n        * Agent / 摘要 / 输入审查\n+ 执行与文件后端\n    - CompositeBackend\n        * OpenSandbox：用户级沙箱\n        * StoreBackend：偏好与技能\n+ 状态与业务数据\n    - MySQL agent_db\n        * 检查点 / 展示历史\n        * 账号 / 会话 / 沙箱绑定\n    - InMemoryStore\n        * 偏好 / 共享技能（进程内）\n    - ERP 业务库\n        * 物料 / 供应商 / 订单 / 库存",
+    "resource_id": "gf9fi"
+  },
+  {
+    "name": "agent-collaboration-flow-zh",
+    "type": "flowchart",
+    "section": "3.2",
+    "dsl": "A[Vue 工作台\\n请求与 SSE] -->|HTTP| B[FastAPI\\n登录 / 归属 / 输入检查]\nB -->|检查通过| C[AgentLoader\\n用户沙箱 + 请求执行图]\nC -->|运行| D[主 Agent\\n识别需求与任务委派]\nD -->|分析任务| E[采购分析子 Agent\\n收集证据 / 计算 / 报告]\nD -->|订单任务| F[采购订单子 Agent\\n准备订单参数]\nD -->|直接答复| J[主 Agent 汇总\\n分析结论 / 订单实际结果]\nE -->|调用| G[分析执行工具\\nERP 查询 / 沙箱 / 图表 / 搜索]\nG -->|分析结果| J\nF -->|执行前暂停| H[人工审批\\n同意后调用写工具]\nH -->|同意| I[ERP MCP\\nJava 订单创建 / 更新]\nH -->|拒绝| J\nI -->|业务结果| J\nJ -->|SSE| K([Vue 工作台\\n最终答复 / 图表 / 执行过程])",
+    "resource_id": "ifux9"
+  },
+  {
+    "name": "order-approval-flow-zh",
+    "type": "flowchart",
+    "section": "4.3",
+    "dsl": "A([订单请求\\n查询并定位业务对象]) --> B{订单参数完整？}\nB -->|否| C[request_order_info\\n中断并等待补充]\nC -->|等待输入| D[用户补充文本\\n身份校验 + 输入检查]\nD -->|resume| B\nB -->|是| E[准备创建或更新参数\\norder_create / order_update]\nE --> F[执行前中断\\nMySQL 检查点保存]\nF -->|等待审批| G{用户审批决定}\nG -->|同意| H[approve → resume\\n执行 ERP 订单接口]\nG -->|拒绝| I[reject → resume\\n不执行该写入动作]\nH --> J[核对 ERP 返回结果\\n成功 / 失败分别反馈]\nJ --> K([返回用户并保存历史\\nSSE / 展示消息])\nI --> K",
+    "resource_id": "yaa9i"
+  },
+  {
+    "name": "chart-generation-flow-zh",
+    "type": "flowchart",
+    "section": "5.3",
+    "dsl": "A[分析 Agent 选择类型\\n准备数据 / 按需读参数] --> B[generate_chart\\n类型 + 图表参数]\nB --> C{本地校验通过？}\nC -->|否| D([返回字段错误\\n本次不调用远端])\nC -->|是| E[按类型路由\\n调用对应 MCP 工具]\nE --> F{远端调用结果}\nF -->|成功| H[保留 content 与 artifact\\n回退成功时附主题提示]\nF -->|特定兼容错误| G[default 主题重试一次\\n只处理已知 dark 故障]\nF -->|其他失败| I([返回明确失败\\n不伪造图片或成功状态])\nG -->|重试成功| H\nG -->|重试失败| I\nH --> J([Agent 汇总 / 前端展示])",
+    "resource_id": "be7kw"
+  },
+  {
+    "name": "chart-startup-flow-zh",
+    "type": "flowchart",
+    "section": "5.3",
+    "dsl": "A[加载图表 MCP 工具\\n读取原始 schema] --> B[按工具名分类\\n识别当前可用图表类型]\nB -->|原始约束| C[后端保留完整能力\\ntool_map 与 validators]\nB -->|统一入口| D[构建 generate_chart\\n类型枚举 + 简短说明]\nB -->|未合并工具| E[其余工具单独保留\\nextra_mcp_tools]\nC -->|封装时引用| D\nD -->|仅直接提供一个图表工具| F([按请求绑定分析子 Agent\\n主 Agent 委派分析任务])",
+    "resource_id": "mn927"
+  },
+  {
+    "name": "input-guard-flow-zh",
+    "type": "flowchart",
+    "section": "9.2",
+    "dsl": "A[聊天请求\\n认证与会话归属校验] -->|认证通过| B[基础输入与配置校验\\n非空 / 长度 / 控制字符]\nB -->|格式与配置有效| C{语义审查允许？}\nC -->|ALLOW| D[确定性业务规则\\n指定整句联系人导出检查]\nC -->|不允许| I([403 策略拦截\\n不进入业务执行])\nD -->|规则命中| I\nD -->|未命中| E{命中固定问候？}\nE -->|是| F([固定回复中间件\\n写入答复并结束本轮])\nE -->|否| G[验证 PASSED\\n且返回内容未被改写]\nG -->|状态和内容符合| H([进入业务 Agent\\n分析 / 工具 / 订单审批])",
+    "resource_id": "zzd1k"
+  },
+  {
+    "name": "input-guard-resume-flow-zh",
+    "type": "flowchart",
+    "section": "9.2",
+    "dsl": "A[恢复请求\\n认证并校验会话归属] -->|归属通过| B{resume 结构}\nB -->|补充信息| C[仅含 supplement\\n补充文本走完整输入护栏]\nB -->|审批决定| D[仅含 decisions\\n1–20 项且每项仅 type]\nB -->|混合字段或其他结构| G([返回错误并停止恢复\\n422 / 403 / 503])\nC -->|通过| F([Command resume\\n由原中断点继续执行])\nC -->|未通过| G\nD -->|结构与配置有效| E[只允许 approve / reject\\n不接受编辑后的工具参数]\nD -->|结构或配置无效| G\nE -->|枚举校验通过| F\nE -->|包含额外内容| G",
+    "resource_id": "vrbf8"
+  },
+  {
+    "name": "business-capabilities-zh",
+    "type": "flowchart",
+    "section": "1",
+    "dsl": "A([采购用户\\n提出问题或业务任务]) -->|分析| B[分析场景\\n比价 / 行情 / 采购策略]\nA -->|订单| C[订单场景\\n查询 / 信息补齐 / 参数准备]\nA -->|复用| D[知识与偏好\\n技能复用 / 用户上下文]\nB -->|取证| E[证据与计算\\nERP / 搜索 / 沙箱]\nC -->|需要写入| F[人工审批\\n同意后执行 ERP 写入]\nD -->|提供方法与上下文| G([可读业务结果\\n结论 / 图表 / 实际订单结果])\nE --> G\nF --> G",
+    "resource_id": "ez7mn"
+  },
+  {
+    "name": "skills-context-flow-zh",
+    "type": "flowchart",
+    "section": "6.2",
+    "dsl": "A[本地预置技能\\nSKILL.md / 脚本 / 参考] --> C[SkillsSyncMiddleware\\n增量同步]\nB[运行期技能分配\\nassign_skill] -->|保存| D[共享技能 Store\\nnamespace = skills]\nB -->|写入目标作用域| F[用户沙箱技能目录\\nmain / procurement / order]\nD --> E[UserSkillsRestore\\n从 Store 恢复副本]\nC --> F\nE --> F\nF --> G[DeepAgents 发现与按需读取\\n按 Agent 作用域使用]\nG --> H([结合工具和数据执行\\n形成业务结果])",
+    "resource_id": "ln4gl"
+  },
+  {
+    "name": "storage-responsibilities-zh",
+    "type": "flowchart",
+    "section": "7.1",
+    "dsl": "A[Agent 执行与 Web 会话] -->|执行状态与展示消息| B[MySQL agent_db\\n检查点 / 历史 / 账号 / 绑定]\nA -->|文件操作| C[CompositeBackend\\n按路径选择后端]\nB -->|跨进程保存| D[恢复任务与还原界面\\n两套数据分别使用]\nC -->|memories / persisted-skills| E[StoreBackend → InMemoryStore\\n偏好按用户 / 技能共享]\nC -->|其他路径| F[SandboxBackendProxy\\n其余工作文件与分析产物]\nF -->|显式导出| G[download_sandbox_file\\n复制到服务端 download 目录]\nA -->|业务读写| H[ERP MCP → Java ERP\\n业务库保存订单等正式数据]",
+    "resource_id": "td137"
+  },
+  {
+    "name": "sandbox-lifecycle-zh",
+    "type": "flowchart",
+    "section": "8.2",
+    "dsl": "A([按 user_id 获取环境]) --> B{内存代理缓存命中？}\nB -->|命中| F[返回用户级代理\\n同用户多会话共享]\nB -->|未命中| C{有可认领的预热沙箱？}\nC -->|认领成功| F\nC -->|不可用| D{数据库绑定可重连？}\nD -->|重连成功| F\nD -->|不可用| E[新建沙箱\\n安装依赖 / 保存绑定]\nE --> F\nF --> G{abefore_agent 健康检查}\nG -->|健康| J([进入本轮 Agent 执行\\n旧任意工作文件不自动迁移])\nG -->|失败| H[重建基础环境\\n上传 AGENTS.md]\nH --> I[代理替换内部 backend\\n调用方继续持有原代理]\nI --> J",
+    "resource_id": "fpi5k"
+  },
+  {
+    "name": "sse-interaction-zh",
+    "type": "flowchart",
+    "section": "10.3",
+    "dsl": "A[浏览器 fetch POST\\nCookie + 请求正文] --> B[FastAPI\\n认证 / 归属 / 输入检查]\nB -->|通过| C[Agent astream\\n模型消息 + 图状态]\nC -->|流式| D[SSE 事件\\ntoken / tool_* / interrupt]\nD -->|文本与工具事件| E[前端按调用 ID 关联\\n最终答复 / 执行过程 / 图片]\nD -->|interrupt| F[人工中断组件\\n补充信息或同意拒绝]\nF -->|用户操作| G[POST resume\\n再次校验后恢复]\nG -->|Command resume| C\nE -->|流结束时保存| H[展示消息入 MySQL\\n会话历史重新加载]\nD -->|终止事件| I([done / error\\n本轮结束或显示失败])",
+    "resource_id": "xc9dt"
+  },
+  {
+    "name": "design-value-map-zh",
+    "type": "flowchart",
+    "section": "11",
+    "dsl": "A[采购任务复杂且包含写入] --> B[专业分工 + 人工审批]\nA --> C[预计算 + 按请求绑定\\n统一图表 + 按需技能]\nA --> D[检查点 + 展示历史\\n沙箱代理 + 健康恢复]\nB --> E[职责和业务动作可检查]\nC --> F[减少重复配置与上下文]\nD --> G[任务可恢复 / 结果可阅读]\nE -->|验证价值| H([真实任务评估\\n质量 / 成本 / 延迟 / 成功率])\nF -->|验证价值| H\nG -->|验证价值| H",
+    "resource_id": "auecz"
+  },
+  {
+    "name": "module-dependencies-zh",
+    "type": "flowchart",
+    "section": "12",
+    "dsl": "A[frontend/src\\nVue 工作台] -->|HTTP / SSE| B[api_view.web_main\\nAPI / 认证 / AgentLoader]\nB -->|构图与运行| C[agent.main_agent\\n预计算 / 主子 Agent 工厂]\nB -->|会话与历史| F[agent.mysql_storage\\n账号 / 状态 / 历史]\nC --> D[agent.tools / middlewares\\n工具、校验与运行钩子]\nC --> E[agent.backends\\n沙箱与文件路由]\nC -->|checkpointer| F\nD -->|MCP| G[mcp_server.server_main\\nERP MCP → Java REST]\nC -->|读取 / 同步| H[skills / agent.memory\\n技能与 Agent 指引]",
+    "resource_id": "qlnlp"
+  },
+  {
+    "name": "startup-dependencies-zh",
+    "type": "flowchart",
+    "section": "13",
+    "dsl": "A[配置环境与依赖\\n模型 / MySQL / ERP / 沙箱] --> B[准备外部服务\\nJava ERP / 图表 MCP / OpenSandbox]\nA --> C[初始化 MySQL\\nscripts/init_mysql.py]\nB --> D[启动 ERP MCP\\nserver_main]\nD --> E[启动 Web\\nstart_web.py]\nC --> E\nE --> F[FastAPI 启动阶段\\nMySQL 初始化 / MCP 预计算]\nF -->|关键初始化成功| G[沙箱预热\\n失败可留到请求时创建]\nF -->|关键初始化失败| H([启动失败并检查依赖\\n不降级为内存检查点])\nG -->|继续启动| I([接受 Web 请求\\n验证 SSE 与真实业务链路])",
+    "resource_id": "pausm"
+  },
+  {
+    "name": "improvement-roadmap-zh",
+    "type": "flowchart",
+    "section": "14",
+    "dsl": "A[P0 权限与订单一致性\\n会话归属 / 服务鉴权 / 幂等] -->|先解决越权与重复写入| B[P1 持久化与隔离\\n持久 Store / 技能权限 / 沙箱协调]\nB -->|再完善状态与交付| C[P1 完整交付与运行控制\\n鉴权下载 / 标题 / 取消 / 内容边界]\nC -->|按需扩展能力| D[P2 外部能力与兼容\\n图表降级 / 独立表格工具绑定]\nD -->|验证后对外承诺| E([持续以真实任务验收\\n权限测试 / 重放 / 恢复 / 成本延迟])",
+    "resource_id": "sczi1"
+  }
+]

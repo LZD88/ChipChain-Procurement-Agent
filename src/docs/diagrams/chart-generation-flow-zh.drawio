@@ -1,0 +1,73 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="单次图表调用与错误处理" name="单次图表调用与错误处理">
+    <mxGraphModel adaptiveColors="auto" grid="1" gridSize="10" page="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="A" value="分析 Agent 选择类型&lt;br&gt;准备数据 / 按需读参数" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0ebff;strokeColor=#8b73c8;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="40" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="B" value="generate_chart&lt;br&gt;类型 + 图表参数" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0ebff;strokeColor=#8b73c8;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="200" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="C" value="本地校验通过？" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f6f1;strokeColor=#45a38b;fontColor=#172b4d;fontSize=14;spacing=8;rhombus;" vertex="1" parent="1">
+          <mxGeometry x="340" y="360" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="D" value="返回字段错误&lt;br&gt;本次不调用远端" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#94a3b8;fontColor=#172b4d;fontSize=14;spacing=8;ellipse;" vertex="1" parent="1">
+          <mxGeometry x="40" y="360" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="E" value="按类型路由&lt;br&gt;调用对应 MCP 工具" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3df;strokeColor=#d7a149;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="520" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="F" value="远端调用结果" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3df;strokeColor=#d7a149;fontColor=#172b4d;fontSize=14;spacing=8;rhombus;" vertex="1" parent="1">
+          <mxGeometry x="340" y="680" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="G" value="default 主题重试一次&lt;br&gt;只处理已知 dark 故障" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3df;strokeColor=#d7a149;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="340" y="840" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="H" value="保留 content 与 artifact&lt;br&gt;回退成功时附主题提示" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f6f1;strokeColor=#45a38b;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1000" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="I" value="返回明确失败&lt;br&gt;不伪造图片或成功状态" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#94a3b8;fontColor=#172b4d;fontSize=14;spacing=8;ellipse;" vertex="1" parent="1">
+          <mxGeometry x="640" y="1000" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="J" value="Agent 汇总 / 前端展示" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf2ff;strokeColor=#5b8bd9;fontColor=#172b4d;fontSize=14;spacing=8;ellipse;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1160" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="edge0" source="A" target="B" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge1" source="B" target="C" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge2" source="C" target="D" value="否" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge3" source="C" target="E" value="是" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge4" source="E" target="F" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge5" source="F" target="H" value="成功" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge6" source="F" target="G" value="特定兼容错误" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge7" source="F" target="I" value="其他失败" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge8" source="G" target="H" value="重试成功" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge9" source="G" target="I" value="重试失败" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge10" source="H" target="J" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;strokeColor=#64748b;fontColor=#334155;fontSize=12;defaultLabelBackgroundColor=page;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

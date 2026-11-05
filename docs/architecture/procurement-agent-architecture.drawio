@@ -1,0 +1,255 @@
+<mxfile host="app.diagrams.net" version="26.0.0" type="device">
+  <diagram id="page-1" name="01 项目架构">
+    <mxGraphModel adaptiveColors="auto" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="2160" pageHeight="1500" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="ERP 采购智能助手｜项目架构" vertex="1" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=38;fontColor=#0F172A;fontStyle=1;">
+          <mxGeometry x="60" y="35" width="2070" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Vue 3 + FastAPI + DeepAgents / LangGraph · 安全检查先于业务执行 · Java ERP 通过 MCP 接入" vertex="1" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=22;fontColor=#64748B;fontStyle=0;">
+          <mxGeometry x="60" y="95" width="2070" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="note-0" value="图例：蓝色 = Agent / 接入    橙色 = 安全控制    绿色 = ERP 调用链    紫色 = 外部能力    虚线 = 共享依赖" vertex="1" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=20;fontColor=#64748B;fontStyle=0;">
+          <mxGeometry x="65" y="1432" width="2065" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="note-1" value="当前输入护栏审查用户消息与补充文本；未配置模型输出 / 工具结果的内容审查。  ·  依据当前仓库代码" vertex="1" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=18;fontColor=#64748B;fontStyle=0;">
+          <mxGeometry x="65" y="1464" width="2065" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="runtime" value="AGENT 执行层" vertex="1" parent="1" style="swimlane;html=1;startSize=48;rounded=1;arcSize=10;horizontal=1;collapsible=0;fillColor=#EFF6FF;swimlaneFillColor=#EFF6FF;strokeColor=#3B82F6;fontColor=#1E3A8A;fontFamily=Arial;fontSize=21;align=left;spacingLeft=20;fontStyle=1;">
+          <mxGeometry x="770" y="520" width="980" height="470" as="geometry" />
+        </mxCell>
+        <mxCell id="foundation" value="共享运行底座 · 主 / 子 Agent 共用" vertex="1" parent="1" style="swimlane;html=1;startSize=48;rounded=1;arcSize=10;horizontal=1;collapsible=0;fillColor=#F8FAFC;swimlaneFillColor=#F8FAFC;strokeColor=#A6B3C3;fontColor=#334155;fontFamily=Arial;fontSize=21;align=left;spacingLeft=20;fontStyle=1;">
+          <mxGeometry x="60" y="760" width="610" height="640" as="geometry" />
+        </mxCell>
+        <mxCell id="erp_system" value="外部业务系统 · JAVA ERP" vertex="1" parent="1" style="swimlane;html=1;startSize=48;rounded=1;arcSize=10;horizontal=1;collapsible=0;fillColor=#ECFDF5;swimlaneFillColor=#ECFDF5;strokeColor=#159A78;fontColor=#065F46;fontFamily=Arial;fontSize=21;align=left;spacingLeft=20;fontStyle=1;">
+          <mxGeometry x="1750" y="1000" width="380" height="420" as="geometry" />
+        </mxCell>
+        <mxCell id="ui" value="&lt;div style=&quot;font-size:25px;color:#1E3A8A;font-weight:bold;margin-bottom:12px&quot;&gt;用户 / Vue 3 前端&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;聊天与历史记录&lt;br&gt;SSE 内容 / 图表 / 审批卡片&lt;/div&gt;" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3B82F6;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="60" y="200" width="300" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="api" value="&lt;div style=&quot;font-size:25px;color:#1E3A8A;font-weight:bold;margin-bottom:12px&quot;&gt;FastAPI 接入层&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;登录 Cookie / 会话归属校验&lt;br&gt;消息输入 · SSE 流式响应&lt;/div&gt;" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3B82F6;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="430" y="200" width="320" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="guard" value="&lt;div style=&quot;font-size:25px;color:#854D0E;font-weight:bold;margin-bottom:12px&quot;&gt;NeMo 输入安全护栏&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;本地校验 + LLM 审查 + Colang&lt;br&gt;通过后才创建会话、分配沙箱&lt;/div&gt;" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#D59A20;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="820" y="200" width="350" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="main" value="&lt;div style=&quot;font-size:25px;color:#1E3A8A;font-weight:bold;margin-bottom:12px&quot;&gt;主 Agent&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;DeepAgents / LangGraph&lt;br&gt;意图理解 · task 委派 · 汇总回复&lt;/div&gt;" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3B82F6;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="1240" y="200" width="350" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="models" value="&lt;div style=&quot;font-size:25px;color:#5B21B6;font-weight:bold;margin-bottom:12px&quot;&gt;模型服务 / DeepSeek&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;业务模型 · 摘要模型&lt;br&gt;护栏使用独立审查配置&lt;/div&gt;" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#9671D3;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="1740" y="200" width="360" height="138" as="geometry" />
+        </mxCell>
+        <mxCell id="blocked" value="&lt;div style=&quot;font-size:25px;color:#9F1239;font-weight:bold;margin-bottom:12px&quot;&gt;拦截 / 异常返回客户端&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;403 拒绝 · 422 输入错误&lt;br&gt;503 审查不可用&lt;/div&gt;" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#E07483;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="820" y="380" width="350" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="analyst" value="&lt;div style=&quot;font-size:25px;color:#1E3A8A;font-weight:bold;margin-bottom:12px&quot;&gt;采购分析子 Agent&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;procurement-analyst&lt;br&gt;业务查询 · 比价 / 分析 · 报告&lt;/div&gt;" vertex="1" parent="runtime" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3B82F6;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="40" y="60" width="360" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="order" value="&lt;div style=&quot;font-size:25px;color:#1E3A8A;font-weight:bold;margin-bottom:12px&quot;&gt;采购订单子 Agent&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;procurement-order&lt;br&gt;订单查询 · 创建 / 修改采购单&lt;/div&gt;" vertex="1" parent="runtime" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3B82F6;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="550" y="60" width="360" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="chart" value="&lt;div style=&quot;font-size:25px;color:#5B21B6;font-weight:bold;margin-bottom:12px&quot;&gt;统一图表工具&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;generate_chart · 26 种类型&lt;br&gt;原始 schema + 跨字段约束校验&lt;/div&gt;" vertex="1" parent="runtime" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#9671D3;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="40" y="295" width="360" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="hitl" value="&lt;div style=&quot;font-size:25px;color:#854D0E;font-weight:bold;margin-bottom:12px&quot;&gt;HITL 人工审批&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;order_create / order_update&lt;br&gt;approve 执行；reject 不写入&lt;/div&gt;" vertex="1" parent="runtime" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#D59A20;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="550" y="295" width="360" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="web" value="&lt;div style=&quot;font-size:25px;color:#5B21B6;font-weight:bold;margin-bottom:12px&quot;&gt;博查 Web Search&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;主 Agent / 分析 / 订单共用&lt;br&gt;市场检索 · 供应商背景调研&lt;/div&gt;" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#9671D3;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="60" y="555" width="610" height="135" as="geometry" />
+        </mxCell>
+        <mxCell id="sandbox" value="&lt;div style=&quot;font-size:25px;color:#334155;font-weight:bold;margin-bottom:12px&quot;&gt;OpenSandbox · 每用户沙箱&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;技能执行 · Python venv · 报告文件&lt;br&gt;健康检查 / 自动恢复 / 熔断保护&lt;/div&gt;" vertex="1" parent="foundation" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#A6B3C3;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="35" y="75" width="540" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="skills" value="&lt;div style=&quot;font-size:25px;color:#334155;font-weight:bold;margin-bottom:12px&quot;&gt;Skills + Memory&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;/skills 按需读取、增量同步&lt;br&gt;InMemoryStore：进程内记忆 / 技能存储&lt;/div&gt;" vertex="1" parent="foundation" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#A6B3C3;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="35" y="250" width="540" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="agentdb" value="&lt;div style=&quot;font-size:25px;color:#334155;font-weight:bold;margin-bottom:12px&quot;&gt;Agent MySQL · agent_db&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;账号 / 登录会话 / 会话归属&lt;br&gt;Checkpoints / 展示消息 / 沙箱绑定&lt;/div&gt;" vertex="1" parent="foundation" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#A6B3C3;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="35" y="425" width="540" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="chartmcp" value="&lt;div style=&quot;font-size:25px;color:#5B21B6;font-weight:bold;margin-bottom:12px&quot;&gt;魔塔可视化 MCP 服务&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;原始图表 / 地图 / 结构图工具&lt;br&gt;返回 content + artifact / 图片 URL&lt;/div&gt;" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#9671D3;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="810" y="1070" width="360" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="erpmcp" value="&lt;div style=&quot;font-size:25px;color:#065F46;font-weight:bold;margin-bottom:12px&quot;&gt;ERP MCP Server / FastMCP&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;供应商 · 物料 · 库存 · 订单工具&lt;br&gt;Streamable HTTP → httpx / JSON&lt;/div&gt;" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#159A78;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="1300" y="1070" width="400" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="java" value="&lt;div style=&quot;font-size:25px;color:#065F46;font-weight:bold;margin-bottom:12px&quot;&gt;Java ERP REST API&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;供应商 / 物料 / 库存 / 订单&lt;br&gt;业务规则校验与业务数据读写&lt;/div&gt;" vertex="1" parent="erp_system" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#159A78;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="30" y="70" width="320" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="erpdb" value="&lt;div style=&quot;font-size:25px;color:#065F46;font-weight:bold;margin-bottom:12px&quot;&gt;ERP 业务库&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;chip_supply_db&lt;br&gt;由 Java 系统管理&lt;/div&gt;" vertex="1" parent="erp_system" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#159A78;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="30" y="280" width="320" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="limits" value="&lt;div style=&quot;font-size:25px;color:#854D0E;font-weight:bold;margin-bottom:12px&quot;&gt;执行期间的保护&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;模型 / 工具调用次数限制&lt;br&gt;工具异常转为错误结果&lt;br&gt;沙箱健康恢复与熔断&lt;/div&gt;" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#D59A20;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="1790" y="550" width="300" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="return" value="&lt;div style=&quot;font-size:25px;color:#334155;font-weight:bold;margin-bottom:12px&quot;&gt;结果返回&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;业务结果沿原调用链回传&lt;br&gt;SSE 输出回复与审批事件&lt;/div&gt;" vertex="1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#A6B3C3;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="1790" y="805" width="300" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-0" value="HTTP / SSE" edge="1" parent="1" source="ui" target="api" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=block;startFill=1;strokeColor=#64748B;strokeWidth=2;fontColor=#64748B;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-1" value="检查" edge="1" parent="1" source="api" target="guard" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#64748B;strokeWidth=2;fontColor=#64748B;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-2" value="通过" edge="1" parent="1" source="guard" target="main" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#159A78;strokeWidth=2;fontColor=#159A78;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-3" value="模型调用" edge="1" parent="1" source="main" target="models" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#9671D3;strokeWidth=2;fontColor=#9671D3;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-4" value="独立审查调用" edge="1" parent="1" source="guard" target="models" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#9671D3;strokeWidth=2;fontColor=#9671D3;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-5" value="未通过" edge="1" parent="1" source="guard" target="blocked" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#D25B70;strokeWidth=2;fontColor=#D25B70;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-6" value="task · 分析" edge="1" parent="1" source="main" target="analyst" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#3B82F6;strokeWidth=2;fontColor=#3B82F6;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-7" value="task · 订单" edge="1" parent="1" source="main" target="order" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#3B82F6;strokeWidth=2;fontColor=#3B82F6;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-8" value="检索" edge="1" parent="1" source="analyst" target="web" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#9671D3;strokeWidth=2;fontColor=#9671D3;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-9" value="图表生成" edge="1" parent="runtime" source="analyst" target="chart" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#9671D3;strokeWidth=2;fontColor=#9671D3;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-10" value="写操作" edge="1" parent="runtime" source="order" target="hitl" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#D59A20;strokeWidth=2;fontColor=#D59A20;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-11" value="MCP" edge="1" parent="1" source="chart" target="chartmcp" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#9671D3;strokeWidth=2;fontColor=#9671D3;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-12" value="审批通过" edge="1" parent="1" source="hitl" target="erpmcp" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#D59A20;strokeWidth=2;fontColor=#D59A20;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-13" value="业务查询" edge="1" parent="1" source="analyst" target="erpmcp" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#159A78;strokeWidth=2;fontColor=#159A78;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-14" value="订单查询" edge="1" parent="1" source="order" target="erpmcp" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#159A78;strokeWidth=2;fontColor=#159A78;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-15" value="REST" edge="1" parent="1" source="erpmcp" target="java" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#159A78;strokeWidth=2;fontColor=#159A78;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-16" value="读写" edge="1" parent="erp_system" source="java" target="erpdb" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#159A78;strokeWidth=2;fontColor=#159A78;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-17" value="身份 / 会话" edge="1" parent="1" source="api" target="agentdb" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#94A3B8;strokeWidth=2;fontColor=#94A3B8;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-18" value="共享" edge="1" parent="1" source="runtime" target="foundation" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#94A3B8;strokeWidth=2;fontColor=#94A3B8;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="page-2" name="02 安全与 ERP 调用链">
+    <mxGraphModel adaptiveColors="auto" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1900" pageHeight="1690" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="安全护栏与 Java ERP 调用链" vertex="1" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=38;fontColor=#0F172A;fontStyle=1;">
+          <mxGeometry x="60" y="35" width="1810" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="输入检查 → Agent 路由 → 写操作审批 → MCP 适配 → Java REST API" vertex="1" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=22;fontColor=#64748B;fontStyle=0;">
+          <mxGeometry x="60" y="95" width="1810" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="note-0" value="安全检查不通过：不进入业务 Agent，也不调用 Java ERP。问候固定回复仍先通过全部安全检查。" vertex="1" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=22;fontColor=#64748B;fontStyle=0;">
+          <mxGeometry x="65" y="1594" width="1805" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="note-1" value="approve 后从 checkpoint 恢复并执行原工具参数；业务结果沿 MCP → Agent → SSE 返回前端。" vertex="1" parent="1" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=22;fontColor=#64748B;fontStyle=0;">
+          <mxGeometry x="65" y="1634" width="1805" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="input_layer" value="第一道边界 · 身份 / 会话授权与输入安全检查" vertex="1" parent="1" style="swimlane;html=1;startSize=48;rounded=1;arcSize=10;horizontal=1;collapsible=0;fillColor=#FFFBEB;swimlaneFillColor=#FFFBEB;strokeColor=#D59A20;fontColor=#854D0E;fontFamily=Arial;fontSize=21;align=left;spacingLeft=20;fontStyle=1;">
+          <mxGeometry x="50" y="180" width="1800" height="550" as="geometry" />
+        </mxCell>
+        <mxCell id="operation_layer" value="订单执行与审批" vertex="1" parent="1" style="swimlane;html=1;startSize=48;rounded=1;arcSize=10;horizontal=1;collapsible=0;fillColor=#EFF6FF;swimlaneFillColor=#EFF6FF;strokeColor=#3B82F6;fontColor=#1E3A8A;fontFamily=Arial;fontSize=21;align=left;spacingLeft=20;fontStyle=1;">
+          <mxGeometry x="50" y="835" width="1800" height="720" as="geometry" />
+        </mxCell>
+        <mxCell id="request" value="&lt;div style=&quot;font-size:25px;color:#1E3A8A;font-weight:bold;margin-bottom:12px&quot;&gt;用户请求&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;新消息 / 补充文本&lt;br&gt;/chat/stream 或 /resume&lt;/div&gt;" vertex="1" parent="input_layer" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3B82F6;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="40" y="80" width="280" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="auth" value="&lt;div style=&quot;font-size:25px;color:#1E3A8A;font-weight:bold;margin-bottom:12px&quot;&gt;身份与会话归属校验&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;Cookie 登录认证&lt;br&gt;会话归属 / 同源请求校验&lt;br&gt;未登录 401；无权限 404&lt;/div&gt;" vertex="1" parent="input_layer" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3B82F6;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="380" y="65" width="310" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="inputguard" value="&lt;div style=&quot;font-size:25px;color:#854D0E;font-weight:bold;margin-bottom:12px&quot;&gt;NeMo Guardrails · INPUT&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;本地长度 / 控制字符校验&lt;br&gt;self check input：独立 LLM 审查&lt;br&gt;Colang 业务规则 → greeting 流程&lt;/div&gt;" vertex="1" parent="input_layer" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#D59A20;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="750" y="60" width="420" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="decision" value="&lt;div style=&quot;font-size:25px;color:#854D0E;font-weight:bold;margin-bottom:12px&quot;&gt;检查结果&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;按状态分流&lt;/div&gt;" vertex="1" parent="input_layer" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#D59A20;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="1250" y="95" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="deny" value="&lt;div style=&quot;font-size:25px;color:#9F1239;font-weight:bold;margin-bottom:12px&quot;&gt;阻断业务执行&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;403：安全规则拒绝&lt;br&gt;422：输入 / 参数错误&lt;br&gt;503：审查异常或超时&lt;/div&gt;" vertex="1" parent="input_layer" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#E07483;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="1490" y="60" width="270" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="resume" value="&lt;div style=&quot;font-size:25px;color:#334155;font-weight:bold;margin-bottom:12px&quot;&gt;恢复请求的约束&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;补充文本：再次经过输入安全检查&lt;br&gt;审批决策：仅 approve / reject，不能改写工具参数&lt;br&gt;恢复前检查会话归属，使用原会话 checkpoint&lt;/div&gt;" vertex="1" parent="input_layer" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#A6B3C3;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="40" y="340" width="650" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="dispatch" value="&lt;div style=&quot;font-size:25px;color:#1E3A8A;font-weight:bold;margin-bottom:12px&quot;&gt;主 Agent → 订单子 Agent&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;安全检查通过后执行业务&lt;br&gt;识别意图，准备工具参数&lt;/div&gt;" vertex="1" parent="input_layer" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3B82F6;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="750" y="340" width="420" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="greeting" value="&lt;div style=&quot;font-size:25px;color:#065F46;font-weight:bold;margin-bottom:12px&quot;&gt;问候命中 → 固定回复&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;GuardrailResponseMiddleware 写入 AIMessage&lt;br&gt;跳过业务 LLM，保存会话并返回 SSE&lt;/div&gt;" vertex="1" parent="input_layer" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#159A78;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="1250" y="340" width="510" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="query" value="&lt;div style=&quot;font-size:25px;color:#065F46;font-weight:bold;margin-bottom:12px&quot;&gt;订单查询&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;order_search_details&lt;br&gt;无需写操作审批&lt;/div&gt;" vertex="1" parent="operation_layer" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#159A78;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="40" y="80" width="380" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="write" value="&lt;div style=&quot;font-size:25px;color:#1E3A8A;font-weight:bold;margin-bottom:12px&quot;&gt;创建 / 修改采购单&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;order_create / order_update&lt;br&gt;缺字段时 request_order_info 请求补充&lt;/div&gt;" vertex="1" parent="operation_layer" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#3B82F6;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="750" y="80" width="420" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="approval" value="&lt;div style=&quot;font-size:25px;color:#854D0E;font-weight:bold;margin-bottom:12px&quot;&gt;HITL 人工审批&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;interrupt_on → SSE 审批卡片&lt;br&gt;用户决策通过 /resume 恢复执行&lt;/div&gt;" vertex="1" parent="operation_layer" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#D59A20;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="750" y="305" width="420" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="reject" value="&lt;div style=&quot;font-size:25px;color:#9F1239;font-weight:bold;margin-bottom:12px&quot;&gt;reject：终止本次写入&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;不调用 Java 创建 / 修改接口&lt;br&gt;将拒绝结果返回对话&lt;/div&gt;" vertex="1" parent="operation_layer" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#E07483;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="1250" y="305" width="460" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="mcp" value="&lt;div style=&quot;font-size:25px;color:#065F46;font-weight:bold;margin-bottom:12px&quot;&gt;ERP MCP Server&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;Streamable HTTP / FastMCP&lt;br&gt;snake_case → Java camelCase&lt;br&gt;httpx.AsyncClient 调用 REST API&lt;/div&gt;" vertex="1" parent="operation_layer" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#159A78;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="750" y="545" width="420" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="java" value="&lt;div style=&quot;font-size:25px;color:#065F46;font-weight:bold;margin-bottom:12px&quot;&gt;Java ERP REST API&lt;/div&gt;&lt;div style=&quot;font-size:20px;color:#475569;line-height:1.45&quot;&gt;GET /orders/search-details&lt;br&gt;POST /orders/create&lt;br&gt;PUT /orders/update/{order_id}&lt;/div&gt;" vertex="1" parent="operation_layer" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFFFFF;strokeColor=#159A78;strokeWidth=2;fontFamily=Arial;fontSize=20;spacing=14;">
+          <mxGeometry x="1250" y="545" width="460" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-0" value="请求" edge="1" parent="input_layer" source="request" target="auth" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#64748B;strokeWidth=2;fontColor=#64748B;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-1" value="输入" edge="1" parent="input_layer" source="auth" target="inputguard" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#64748B;strokeWidth=2;fontColor=#64748B;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-2" value="" edge="1" parent="input_layer" source="inputguard" target="decision" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#D59A20;strokeWidth=2;fontColor=#D59A20;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-3" value="拒绝" edge="1" parent="input_layer" source="decision" target="deny" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#D25B70;strokeWidth=2;fontColor=#D25B70;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-4" value="通过 · 正常业务" edge="1" parent="input_layer" source="decision" target="dispatch" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#159A78;strokeWidth=2;fontColor=#159A78;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-5" value="通过 · 问候" edge="1" parent="input_layer" source="decision" target="greeting" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#159A78;strokeWidth=2;fontColor=#159A78;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-6" value="读操作" edge="1" parent="1" source="dispatch" target="query" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#159A78;strokeWidth=2;fontColor=#159A78;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-7" value="写操作" edge="1" parent="1" source="dispatch" target="write" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#3B82F6;strokeWidth=2;fontColor=#3B82F6;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-8" value="暂停等待确认" edge="1" parent="operation_layer" source="write" target="approval" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#D59A20;strokeWidth=2;fontColor=#D59A20;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-9" value="reject" edge="1" parent="operation_layer" source="approval" target="reject" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#D25B70;strokeWidth=2;fontColor=#D25B70;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-10" value="approve" edge="1" parent="operation_layer" source="approval" target="mcp" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#159A78;strokeWidth=2;fontColor=#159A78;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-11" value="直接查询" edge="1" parent="operation_layer" source="query" target="mcp" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#159A78;strokeWidth=2;fontColor=#159A78;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-12" value="REST" edge="1" parent="operation_layer" source="mcp" target="java" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=none;startFill=1;strokeColor=#159A78;strokeWidth=2;fontColor=#159A78;fontSize=19;defaultLabelBackgroundColor=page;labelBackgroundColor=#FFFFFF;dashed=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

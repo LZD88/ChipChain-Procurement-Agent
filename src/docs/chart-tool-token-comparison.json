@@ -1,0 +1,50 @@
+{
+  "scope": "26 chart tools versus one wrapper; other tools excluded on both sides",
+  "tokenizer_note": "cl100k_base proxy; not DeepSeek usage or API framing tokens",
+  "raw_tools_count": 26,
+  "unified_tools_count": 1,
+  "excluded_tools": [
+    "generate_spreadsheet"
+  ],
+  "measurements": {
+    "raw_chart_tools": {
+      "characters": 56440,
+      "utf8_bytes": 56996,
+      "cl100k_base_tokens": 13247
+    },
+    "unified_chart_tool": {
+      "characters": 2722,
+      "utf8_bytes": 2722,
+      "cl100k_base_tokens": 676
+    },
+    "compact_description": {
+      "characters": 2056,
+      "utf8_bytes": 2056,
+      "cl100k_base_tokens": 520
+    },
+    "reference_file": {
+      "characters": 6011,
+      "utf8_bytes": 8363,
+      "cl100k_base_tokens": 2790
+    }
+  },
+  "source_sha256": {
+    "test/fixtures/chart_mcp_tools.json": "f0890fc61e89bb3939febd6489f91c84cbbb4c3bf71878a49219daec9d72ce8e",
+    "agent/tools/chart_generator.py": "b8bdfaada2d701cf7a3608df622f8c52988bd48577e62f7643ef12bd3b2de2e1",
+    "skills/analyis_chart_params.md": "5cb6c18a139919fd2dfee34c8916dceb058050847e7eea926f6b5e92d96290d9"
+  },
+  "schema_reduction": {
+    "characters": {
+      "saved": 53718,
+      "percent": 95.18
+    },
+    "utf8_bytes": {
+      "saved": 54274,
+      "percent": 95.22
+    },
+    "cl100k_base_tokens": {
+      "saved": 12571,
+      "percent": 94.9
+    }
+  }
+}

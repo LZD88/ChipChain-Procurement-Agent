@@ -1,0 +1,98 @@
+[
+  {
+    "name": "procurement-architecture-zh",
+    "resource_id": "gf9fi",
+    "last_individual_update": "2026-10-30T08:35:56.315Z",
+    "final_batch_pending": true
+  },
+  {
+    "name": "agent-collaboration-flow-zh",
+    "resource_id": "ifux9",
+    "last_individual_update": "2026-10-30T08:35:58.241Z",
+    "final_batch_pending": true
+  },
+  {
+    "name": "order-approval-flow-zh",
+    "resource_id": "yaa9i",
+    "last_individual_update": "2026-10-30T08:36:00.845Z",
+    "final_batch_pending": true
+  },
+  {
+    "name": "chart-generation-flow-zh",
+    "resource_id": "be7kw",
+    "last_individual_update": "2026-10-30T08:36:03.060Z",
+    "final_batch_pending": true
+  },
+  {
+    "name": "chart-startup-flow-zh",
+    "resource_id": "mn927",
+    "last_individual_update": "2026-10-30T08:36:05.113Z",
+    "final_batch_pending": true
+  },
+  {
+    "name": "input-guard-flow-zh",
+    "resource_id": "zzd1k",
+    "last_individual_update": "2026-10-30T08:36:06.860Z",
+    "final_batch_pending": true
+  },
+  {
+    "name": "input-guard-resume-flow-zh",
+    "resource_id": "vrbf8",
+    "last_individual_update": null,
+    "final_batch_pending": true
+  },
+  {
+    "name": "business-capabilities-zh",
+    "resource_id": "ez7mn",
+    "last_individual_update": null,
+    "final_batch_pending": true
+  },
+  {
+    "name": "skills-context-flow-zh",
+    "resource_id": "ln4gl",
+    "last_individual_update": null,
+    "final_batch_pending": true
+  },
+  {
+    "name": "storage-responsibilities-zh",
+    "resource_id": "td137",
+    "last_individual_update": null,
+    "final_batch_pending": true
+  },
+  {
+    "name": "sandbox-lifecycle-zh",
+    "resource_id": "fpi5k",
+    "last_individual_update": null,
+    "final_batch_pending": true
+  },
+  {
+    "name": "sse-interaction-zh",
+    "resource_id": "xc9dt",
+    "last_individual_update": null,
+    "final_batch_pending": true
+  },
+  {
+    "name": "design-value-map-zh",
+    "resource_id": "auecz",
+    "last_individual_update": null,
+    "final_batch_pending": true
+  },
+  {
+    "name": "module-dependencies-zh",
+    "resource_id": "qlnlp",
+    "last_individual_update": null,
+    "final_batch_pending": true
+  },
+  {
+    "name": "startup-dependencies-zh",
+    "resource_id": "pausm",
+    "last_individual_update": null,
+    "final_batch_pending": true
+  },
+  {
+    "name": "improvement-roadmap-zh",
+    "resource_id": "sczi1",
+    "last_individual_update": null,
+    "final_batch_pending": true
+  }
+]

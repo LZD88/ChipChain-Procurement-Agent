@@ -1,0 +1,61 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="芯链智能采购助手总体架构" name="芯链智能采购助手总体架构">
+    <mxGraphModel adaptiveColors="auto" grid="1" gridSize="10" page="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="layer0" value="用户交互层" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf2ff;strokeColor=#5b8bd9;fontColor=#172b4d;fontSize=14;spacing=8;swimlane;startSize=30;rounded=0;fontStyle=1;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="20" y="30" width="1200" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="module0_0" value="Vue 3 工作台&lt;br&gt;登录注册 / 会话列表&lt;br&gt;SSE 答复 / 图表预览&lt;br&gt;补充信息 / 人工审批" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf2ff;strokeColor=#5b8bd9;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="layer0">
+          <mxGeometry x="30" y="42" width="350" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="layer1" value="应用接口层" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f6f1;strokeColor=#45a38b;fontColor=#172b4d;fontSize=14;spacing=8;swimlane;startSize=30;rounded=0;fontStyle=1;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="20" y="200" width="1200" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="module1_0" value="FastAPI&lt;br&gt;Cookie 认证 / 会话归属&lt;br&gt;NeMo 输入安全检查&lt;br&gt;Chat / Resume / History" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f6f1;strokeColor=#45a38b;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="layer1">
+          <mxGeometry x="30" y="42" width="350" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="module1_1" value="AgentLoader&lt;br&gt;MCP 工具预计算&lt;br&gt;按请求创建执行图" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f6f1;strokeColor=#45a38b;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="layer1">
+          <mxGeometry x="410" y="42" width="350" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="layer2" value="智能编排层" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0ebff;strokeColor=#8b73c8;fontColor=#172b4d;fontSize=14;spacing=8;swimlane;startSize=30;rounded=0;fontStyle=1;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="20" y="370" width="1200" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="module2_0" value="DeepAgents / LangGraph&lt;br&gt;主 Agent：协调与汇总&lt;br&gt;分析子 Agent：查询与分析&lt;br&gt;订单子 Agent：受控写入" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0ebff;strokeColor=#8b73c8;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="layer2">
+          <mxGeometry x="30" y="42" width="350" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="layer3" value="工具与业务集成层" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3df;strokeColor=#d7a149;fontColor=#172b4d;fontSize=14;spacing=8;swimlane;startSize=30;rounded=0;fontStyle=1;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="20" y="540" width="1200" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="module3_0" value="ERP MCP&lt;br&gt;Java 芯链 REST API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3df;strokeColor=#d7a149;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="layer3">
+          <mxGeometry x="30" y="42" width="350" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="module3_1" value="分析工具&lt;br&gt;图表 MCP / generate_chart&lt;br&gt;博查搜索 / 网页采集" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3df;strokeColor=#d7a149;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="layer3">
+          <mxGeometry x="410" y="42" width="350" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="module3_2" value="模型服务&lt;br&gt;deepseek-flash&lt;br&gt;Agent / 摘要 / 输入审查" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3df;strokeColor=#d7a149;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="layer3">
+          <mxGeometry x="790" y="42" width="350" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="layer4" value="执行与文件后端" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f6f1;strokeColor=#45a38b;fontColor=#172b4d;fontSize=14;spacing=8;swimlane;startSize=30;rounded=0;fontStyle=1;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="20" y="710" width="1200" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="module4_0" value="CompositeBackend&lt;br&gt;OpenSandbox：用户级沙箱&lt;br&gt;StoreBackend：偏好与技能" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f6f1;strokeColor=#45a38b;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="layer4">
+          <mxGeometry x="30" y="42" width="350" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="layer5" value="状态与业务数据" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#94a3b8;fontColor=#172b4d;fontSize=14;spacing=8;swimlane;startSize=30;rounded=0;fontStyle=1;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="20" y="880" width="1200" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="module5_0" value="MySQL agent_db&lt;br&gt;检查点 / 展示历史&lt;br&gt;账号 / 会话 / 沙箱绑定" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#94a3b8;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="layer5">
+          <mxGeometry x="30" y="42" width="350" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="module5_1" value="InMemoryStore&lt;br&gt;偏好 / 共享技能（进程内）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#94a3b8;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="layer5">
+          <mxGeometry x="410" y="42" width="350" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="module5_2" value="ERP 业务库&lt;br&gt;物料 / 供应商 / 订单 / 库存" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#94a3b8;fontColor=#172b4d;fontSize=14;spacing=8;" vertex="1" parent="layer5">
+          <mxGeometry x="790" y="42" width="350" height="95" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

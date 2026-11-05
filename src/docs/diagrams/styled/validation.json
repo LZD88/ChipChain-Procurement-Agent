@@ -1,0 +1,146 @@
+[
+  {
+    "name": "procurement-architecture-zh",
+    "cells": 23,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "agent-collaboration-flow-zh",
+    "cells": 37,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "order-approval-flow-zh",
+    "cells": 30,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "chart-generation-flow-zh",
+    "cells": 28,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "chart-startup-flow-zh",
+    "cells": 17,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "input-guard-flow-zh",
+    "cells": 27,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "input-guard-resume-flow-zh",
+    "cells": 24,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "business-capabilities-zh",
+    "cells": 21,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "skills-context-flow-zh",
+    "cells": 18,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "storage-responsibilities-zh",
+    "cells": 22,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "sandbox-lifecycle-zh",
+    "cells": 31,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "sse-interaction-zh",
+    "cells": 26,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "design-value-map-zh",
+    "cells": 20,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "module-dependencies-zh",
+    "cells": 22,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "startup-dependencies-zh",
+    "cells": 21,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  },
+  {
+    "name": "improvement-roadmap-zh",
+    "cells": 13,
+    "unique_ids": true,
+    "no_literal_newline_escape": true,
+    "single_label_source": true,
+    "normal_font_weight": true,
+    "text_shadow_disabled": true
+  }
+]

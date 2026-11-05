@@ -1,0 +1,7 @@
+A[Agent 执行与 Web 会话] -->|执行状态与展示消息| B[MySQL agent_db\n检查点 / 历史 / 账号 / 绑定]
+A -->|文件操作| C[CompositeBackend\n按路径选择后端]
+B -->|跨进程保存| D[恢复任务与还原界面\n两套数据分别使用]
+C -->|memories / persisted-skills| E[StoreBackend → InMemoryStore\n偏好按用户 / 技能共享]
+C -->|其他路径| F[SandboxBackendProxy\n其余工作文件与分析产物]
+F -->|显式导出| G[download_sandbox_file\n复制到服务端 download 目录]
+A -->|业务读写| H[ERP MCP → Java ERP\n业务库保存订单等正式数据]
