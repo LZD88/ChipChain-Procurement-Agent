@@ -1,0 +1,30 @@
+# NeMo Guardrails 配置；由 RailsConfig.from_path 加载整个目录。
+colang_version: "1.0"
+lowest_temperature: 0.0
+
+# 审查模型独立于业务 Agent。当前适配器支持 OpenAI 兼容服务。
+# 密钥只填写环境变量名，实际值保存在项目 .env 或进程环境变量中。
+models:
+  - type: main
+    engine: openai
+    model: deepseek-flash
+    api_key_env_var: DEEPSEEK_API_KEY
+    parameters:
+      temperature: 0
+      max_tokens: 32
+      timeout: 10
+      max_retries: 0
+      extra_body:
+        thinking:
+          type: disabled
+
+rails:
+  input:
+    parallel: false
+    flows:
+      - self check input
+      # 在 rails/*.co 中定义新流程，再在这里追加同名条目。
+      - block full supplier contact export
+      - greeting
+
+# 运行参数和业务规则见 policies.yml。

@@ -1,0 +1,14 @@
+# 确定性业务规则；当前已在 config.yml 的 rails.input.flows 中启用。
+# 此示例仅匹配整句；同义表达应追加到 policies.yml，由语义审查处理。
+define flow block full supplier contact export
+  if $user_message == "导出全部供应商联系人"
+    bot refuse to respond
+    stop
+
+define bot express greeting
+  "你好！有什么可以帮你的吗？"
+
+define subflow greeting
+  if $user_message.strip() == "你好" or $user_message.strip() == "你好！" or $user_message.strip() == "你好!"
+    bot express greeting
+    stop
