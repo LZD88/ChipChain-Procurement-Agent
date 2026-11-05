@@ -1,0 +1,122 @@
+# 采购芯片零配件报价网址映射表
+# 格式: 芯片零部件名称 → 供应商名称 → 报价页面URL
+#
+# URL 指向的页面包含完整产品信息:
+#   - 当前价格
+#   - 制造商料号、参数、温度等级、标准交期等基本信息
+#   - 爬虫技能可从页面提取上述全部数据
+#
+# 使用流程:
+#   1. MCP 工具获取 ERP 数据（芯片零部件名、供应商名）
+#   2. 在本文件中按 芯片零部件名 + 供应商名 查找对应 URL
+#   3. 找到 URL → 爬虫技能获取当前报价 + 产品详情
+#   4. 未找到 URL → web_search 搜索市场价格
+
+mappings:
+  # === 32位通用微控制器 ===
+  - part_name: "32位通用微控制器"
+    supplier: "教学供应商·晶穹一号"
+    url: "http://host.docker.internal:8082/quotes/LAB-MCU-01-01.html"
+
+  - part_name: "32位通用微控制器"
+    supplier: "教学供应商·硅原二号"
+    url: "http://host.docker.internal:8082/quotes/LAB-MCU-01-02.html"
+
+  # === 低功耗微控制器 ===
+  - part_name: "低功耗微控制器"
+    supplier: "教学供应商·硅原二号"
+    url: "http://host.docker.internal:8082/quotes/LAB-MCU-02-01.html"
+
+  - part_name: "低功耗微控制器"
+    supplier: "教学供应商·栅格三号"
+    url: "http://host.docker.internal:8082/quotes/LAB-MCU-02-02.html"
+
+  # === 串行 NOR 闪存 ===
+  - part_name: "串行 NOR 闪存"
+    supplier: "教学供应商·栅格三号"
+    url: "http://host.docker.internal:8082/quotes/LAB-MEM-03-01.html"
+
+  - part_name: "串行 NOR 闪存"
+    supplier: "教学供应商·微域四号"
+    url: "http://host.docker.internal:8082/quotes/LAB-MEM-03-02.html"
+
+  # === 串行 EEPROM ===
+  - part_name: "串行 EEPROM"
+    supplier: "教学供应商·微域四号"
+    url: "http://host.docker.internal:8082/quotes/LAB-MEM-04-01.html"
+
+  - part_name: "串行 EEPROM"
+    supplier: "教学供应商·光阱五号"
+    url: "http://host.docker.internal:8082/quotes/LAB-MEM-04-02.html"
+
+  # === 同步降压转换器 ===
+  - part_name: "同步降压转换器"
+    supplier: "教学供应商·光阱五号"
+    url: "http://host.docker.internal:8082/quotes/LAB-PMIC-05-01.html"
+
+  - part_name: "同步降压转换器"
+    supplier: "教学供应商·云栈六号"
+    url: "http://host.docker.internal:8082/quotes/LAB-PMIC-05-02.html"
+
+  # === 低噪声线性稳压器 ===
+  - part_name: "低噪声线性稳压器"
+    supplier: "教学供应商·云栈六号"
+    url: "http://host.docker.internal:8082/quotes/LAB-PMIC-06-01.html"
+
+  - part_name: "低噪声线性稳压器"
+    supplier: "教学供应商·晶穹一号"
+    url: "http://host.docker.internal:8082/quotes/LAB-PMIC-06-02.html"
+
+  # === 精密模数转换器 ===
+  - part_name: "精密模数转换器"
+    supplier: "教学供应商·晶穹一号"
+    url: "http://host.docker.internal:8082/quotes/LAB-ANA-07-01.html"
+
+  - part_name: "精密模数转换器"
+    supplier: "教学供应商·硅原二号"
+    url: "http://host.docker.internal:8082/quotes/LAB-ANA-07-02.html"
+
+  # === 双路运算放大器 ===
+  - part_name: "双路运算放大器"
+    supplier: "教学供应商·硅原二号"
+    url: "http://host.docker.internal:8082/quotes/LAB-ANA-08-01.html"
+
+  - part_name: "双路运算放大器"
+    supplier: "教学供应商·栅格三号"
+    url: "http://host.docker.internal:8082/quotes/LAB-ANA-08-02.html"
+
+  # === CAN 总线收发器 ===
+  - part_name: "CAN 总线收发器"
+    supplier: "教学供应商·栅格三号"
+    url: "http://host.docker.internal:8082/quotes/LAB-IF-09-01.html"
+
+  - part_name: "CAN 总线收发器"
+    supplier: "教学供应商·微域四号"
+    url: "http://host.docker.internal:8082/quotes/LAB-IF-09-02.html"
+
+  # === RS485 收发器 ===
+  - part_name: "RS485 收发器"
+    supplier: "教学供应商·微域四号"
+    url: "http://host.docker.internal:8082/quotes/LAB-IF-10-01.html"
+
+  - part_name: "RS485 收发器"
+    supplier: "教学供应商·光阱五号"
+    url: "http://host.docker.internal:8082/quotes/LAB-IF-10-02.html"
+
+  # === 数字温度传感器 ===
+  - part_name: "数字温度传感器"
+    supplier: "教学供应商·光阱五号"
+    url: "http://host.docker.internal:8082/quotes/LAB-SNS-11-01.html"
+
+  - part_name: "数字温度传感器"
+    supplier: "教学供应商·云栈六号"
+    url: "http://host.docker.internal:8082/quotes/LAB-SNS-11-02.html"
+
+  # === 六轴惯性传感器 ===
+  - part_name: "六轴惯性传感器"
+    supplier: "教学供应商·云栈六号"
+    url: "http://host.docker.internal:8082/quotes/LAB-SNS-12-01.html"
+
+  - part_name: "六轴惯性传感器"
+    supplier: "教学供应商·晶穹一号"
+    url: "http://host.docker.internal:8082/quotes/LAB-SNS-12-02.html"
