@@ -63,6 +63,7 @@ class ToolErrorMiddleware(AgentMiddleware):
             logger.warning(
                 "工具调用异常: tool=%s, error=%s: %s",
                 _tool_name(request), type(e).__name__, str(e)[:200],
+                exc_info=True,
             )
             return ToolMessage(
                 content=json.dumps(_build_error_payload(e, request), ensure_ascii=False),
@@ -83,6 +84,7 @@ class ToolErrorMiddleware(AgentMiddleware):
             logger.warning(
                 "工具调用异常: tool=%s, error=%s: %s",
                 _tool_name(request), type(e).__name__, str(e)[:200],
+                exc_info=True,
             )
             return ToolMessage(
                 content=json.dumps(_build_error_payload(e, request), ensure_ascii=False),

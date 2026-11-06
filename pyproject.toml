@@ -14,6 +14,8 @@ dependencies = [
     "langgraph==1.2.12",
     "langgraph-checkpoint-mysql[aiomysql]==3.0.0",
     "aiomysql==0.3.2",
+    # aiomysql 0.3.2 与 PyMySQL 1.2.x 的字节转义 API 不兼容。
+    "PyMySQL==1.1.2",
     "opensandbox==0.1.7",
     "fastapi==0.139.0",
     "uvicorn[standard]==0.42.0",

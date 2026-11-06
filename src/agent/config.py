@@ -7,7 +7,7 @@ from langgraph.store.memory import InMemoryStore
 from opensandbox.config import ConnectionConfig
 
 from agent.env_utils import (
-    GLM_API_KEY,
+    GLM_API_KEY, SANDBOX_DOMAIN, SANDBOX_USE_SERVER_PROXY,
     SANDBOX_API_KEY, GLM_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL,
 )
 
@@ -34,9 +34,9 @@ SUMMARY_MODEL = ChatOpenAI(
 # ---------- 沙箱配置 ----------
 # OpenSandbox 沙箱配置连接（异步客户端 Sandbox 使用）
 SANDBOX_CONFIG = ConnectionConfig(
-    domain="http://localhost:8080",
+    domain=SANDBOX_DOMAIN,
     api_key=SANDBOX_API_KEY,
-    # use_server_proxy=True,
+    use_server_proxy=SANDBOX_USE_SERVER_PROXY,
     request_timeout=timedelta(seconds=60),
     transport=httpx.AsyncHTTPTransport(limits=httpx.Limits(max_connections=20)),
 )

@@ -15,8 +15,19 @@ import urllib.error
 import urllib.request
 import uuid
 
+from dotenv import load_dotenv
+
+
+# Windows 后台启动且输出重定向到文件时，stdout 仍可能继承 GBK 编码。
+# 子进程日志中包含无法用 GBK 表示的字符时，日志转发线程不应因此退出。
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent
+load_dotenv(PROJECT_ROOT / ".env", override=False, encoding="utf-8")
 BACKEND_PORT = 8090
 FRONTEND_PORT = 3000
 LAUNCH_ENV = "DEEPAGENT_LAUNCH_ID"
@@ -25,6 +36,93 @@ LAUNCH_HEADER = "X-DeepAgent-Launch-Id"
 
 class StartupError(RuntimeError):
     """服务无法启动或运行期间提前退出。"""
+
+
+def _url_ready(url, timeout=3):
+    """不使用系统代理检查本地依赖是否已响应。"""
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    try:
+        with opener.open(url, timeout=timeout) as response:
+            return response.status == 200
+    except (urllib.error.URLError, OSError, ValueError):
+        return False
+
+
+def _find_vbox_manage():
+    configured = os.getenv("VBOX_MANAGE", "").strip()
+    candidates = [
+        configured,
+        shutil.which("VBoxManage"),
+        str(Path(os.environ.get("ProgramFiles", "C:/Program Files"))
+            / "Oracle" / "VirtualBox" / "VBoxManage.exe"),
+    ]
+    return next((path for path in candidates if path and Path(path).is_file()), None)
+
+
+def ensure_sandbox_runtime():
+    """按需启动本地 VirtualBox OpenSandbox 虚拟机并等待健康检查。
+
+    只有显式配置 SANDBOX_VM_NAME 时才管理虚拟机；远程 OpenSandbox、Docker
+    或外部托管场景保持原有行为。虚拟机是独立基础设施，退出 Web 启动器时不关闭。
+    """
+    vm_name = os.getenv("SANDBOX_VM_NAME", "").strip()
+    sandbox_domain = os.getenv("SANDBOX_DOMAIN", "http://localhost:8080").rstrip("/")
+    health_url = f"{sandbox_domain}/health"
+    if not vm_name or _url_ready(health_url):
+        if vm_name:
+            print(f"[Sandbox] OpenSandbox is ready at {sandbox_domain}")
+        return
+
+    if os.name != "nt":
+        raise StartupError(
+            f"OpenSandbox is unavailable at {sandbox_domain}. "
+            "SANDBOX_VM_NAME automatic startup is currently supported on Windows."
+        )
+
+    vbox_manage = _find_vbox_manage()
+    if not vbox_manage:
+        raise StartupError(
+            "OpenSandbox is unavailable and VBoxManage was not found. "
+            "Install VirtualBox or set VBOX_MANAGE to VBoxManage.exe."
+        )
+
+    info = subprocess.run(
+        [vbox_manage, "showvminfo", vm_name, "--machinereadable"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+    )
+    if info.returncode != 0:
+        raise StartupError(f"VirtualBox VM {vm_name!r} was not found.")
+
+    if 'VMState="running"' not in info.stdout:
+        print(f"[Sandbox] Starting VirtualBox VM {vm_name!r} in headless mode...")
+        started = subprocess.run(
+            [vbox_manage, "startvm", vm_name, "--type", "headless"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+        )
+        if started.returncode != 0:
+            detail = (started.stderr or started.stdout).strip()
+            raise StartupError(f"Could not start VirtualBox VM {vm_name!r}: {detail}")
+    else:
+        print(f"[Sandbox] VirtualBox VM {vm_name!r} is already running")
+
+    max_wait = int(os.getenv("SANDBOX_VM_START_TIMEOUT", "180"))
+    started_at = time.monotonic()
+    next_log = started_at
+    while time.monotonic() - started_at < max_wait:
+        if _url_ready(health_url, timeout=5):
+            print(f"[Sandbox] OpenSandbox is ready at {sandbox_domain}")
+            return
+        now = time.monotonic()
+        if now >= next_log:
+            print(
+                f"[Sandbox] Waiting for OpenSandbox... "
+                f"({int(now - started_at)}s / {max_wait}s)"
+            )
+            next_log = now + 5
+        time.sleep(1)
+    raise StartupError(
+        f"OpenSandbox at {sandbox_domain} was not healthy within {max_wait} seconds."
+    )
 
 def check_ports_available():
     """在启动任何子进程前检查 IPv4/IPv6，免误连已有服务。"""
@@ -233,6 +331,7 @@ def main():
             previous = signal.signal(sig, signal_handler)
             previous_handlers[sig] = previous
         check_ports_available()
+        ensure_sandbox_runtime()
         launch_id = uuid.uuid4().hex
         backend_proc = run_backend(launch_id)
         check_backend_ready(backend_proc, launch_id)
