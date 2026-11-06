@@ -34,12 +34,13 @@ class SubagentTests(unittest.IsolatedAsyncioTestCase):
         self.executed = []
         names = [
             "supplier_get", "supplier_query", "part_query", "part_search", "part_by_supplier",
-            "inventory_query", "inventory_warning", "order_create", "order_update", "order_search_details",
+            "inventory_query", "inventory_warning", "procurement_compare",
+            "order_create", "order_update", "order_search_details",
         ]
         self.tools = {name: self.make_tool(name) for name in names}
         self.precomputed = main_agent.PrecomputedContext(
-            analyst_mcp_tools=[self.tools[name] for name in names[:7]],
-            order_mcp_tools=[self.tools[name] for name in names[7:]],
+            analyst_mcp_tools=[self.tools[name] for name in names[:8]],
+            order_mcp_tools=[self.tools[name] for name in names[8:]],
             chart_tool=self.make_tool("generate_chart"),
         )
         self.model = ToolCallingModel(
@@ -93,9 +94,9 @@ class SubagentTests(unittest.IsolatedAsyncioTestCase):
         self.precomputed.order_mcp_tools.append(self.make_tool("order_create_debug"))
         graph, arguments, _ = await self.create_graph()
         orchestrator, analyst, order = arguments["subagents"]
-        self.assertEqual(len(orchestrator["tools"]), 10)
-        self.assertEqual(len(analyst["tools"]), 8)
-        self.assertEqual(len(order["tools"]), 5)
+        self.assertEqual(len(orchestrator["tools"]), 11)
+        self.assertEqual(len(analyst["tools"]), 9)
+        self.assertEqual(len(order["tools"]), 6)
         for subagent in (orchestrator, analyst, order):
             bound = {tool.name: tool for tool in subagent["tools"]}
             self.assertFalse(any(name.endswith("_debug") for name in bound))

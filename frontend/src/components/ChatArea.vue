@@ -5,9 +5,9 @@
       <!-- 空状态 -->
       <div v-if="displayMessages.length === 0" class="empty-state">
         <div class="empty-icon" aria-hidden="true"><span class="node-mark"><i></i><i></i><i></i><i></i></span></div>
-        <div class="eyebrow">ERP OPERATIONS DESK</div>
-        <h2>把复杂工作，交给一个清晰的工作台</h2>
-        <p>采购、库存与供应商信息，都可以在这里被整理成下一步行动。</p>
+        <div class="eyebrow">{{ projectName ? 'PROJECT WORKSPACE' : 'ERP OPERATIONS DESK' }}</div>
+        <h2>{{ projectName ? `我们在“${projectName}”中处理什么？` : '把复杂工作，交给一个清晰的工作台' }}</h2>
+        <p>{{ projectName ? '接下来的新会话会自动归入这个项目，方便持续推进同一采购主题。' : '采购、库存与供应商信息，都可以在这里被整理成下一步行动。' }}</p>
         <div class="feature-list">
           <button type="button" class="feature-item featured" @click="emit('suggest', '帮我采购500片六轴惯性传感器，预算4000元，要求两周内交付。先核验库存和供应商，给出方案后创建采购单。')">
             <span class="feature-icon">01</span>
@@ -34,6 +34,7 @@
           <MessageItem
             :message="message"
             :is-streaming="isStreamingForMessage(message)"
+            :processing-status="processingStatus"
           />
         </template>
       </div>
@@ -42,7 +43,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import MessageItem from './MessageItem.vue'
 import { groupReplyTurns } from '../utils/toolCalls.js'
 
@@ -64,9 +65,17 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  processingStatus: {
+    type: String,
+    default: '正在处理采购任务…'
+  },
   showToolCalls: {
     type: Boolean,
     default: true
+  },
+  projectName: {
+    type: String,
+    default: ''
   }
 })
 
@@ -75,6 +84,12 @@ const displayMessages = computed(() => groupReplyTurns(props.messages, props.sho
 // 消息列表引用
 const messageListRef = ref(null)
 const followLatest = ref(true)
+let listResizeObserver
+onMounted(() => {
+  listResizeObserver = new ResizeObserver(() => scrollToBottom())
+  if (messageListRef.value) listResizeObserver.observe(messageListRef.value)
+})
+onBeforeUnmount(() => listResizeObserver?.disconnect())
 function handleScroll() {
   const list = messageListRef.value
   if (list) followLatest.value = list.scrollHeight - list.scrollTop - list.clientHeight < 100
@@ -243,9 +258,10 @@ function scrollToBottom() {
 </style>
 
 <style scoped>
-.chat-area { background: #fbfaf7; }
-.message-list { padding: 34px clamp(18px, 5vw, 72px); }
-.empty-state { background: radial-gradient(circle at 50% 12%, #fffaf0 0, #fbfaf7 42%, #f6f2eb 100%); }
+.chat-area { min-height: 0; background: var(--workspace-surface); }
+.message-list { min-height: 0; padding: 24px calc(var(--conversation-gutter) - 6px) 20px; scrollbar-gutter: stable both-edges; }
+.messages { width: 100%; max-width: var(--conversation-width); margin: 0 auto; }
+.empty-state { height: auto; min-height: 100%; padding: 28px 0; background: transparent; }
 .empty-icon { width: 94px; height: 94px; margin-bottom: 22px; display: grid; place-items: center; border-radius: 28px; background: #203a4b; box-shadow: 10px 12px 0 #e8d6bb; }
 .empty-icon img { display: none; }
 .node-mark { width: 46px; height: 46px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; padding: 8px; transform: rotate(45deg); }
@@ -260,5 +276,9 @@ function scrollToBottom() {
 .feature-item span:last-child { color: #334850; }
 @media (max-width: 540px) {
   .feature-list { grid-template-columns: minmax(0, 1fr); max-width: 320px; }
+}
+@media (max-width: 760px) {
+  .message-list { padding: 16px 12px 20px; scrollbar-gutter: auto; }
+  .empty-state h2 { font-size: 28px; }
 }
 </style>

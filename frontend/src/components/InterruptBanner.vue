@@ -44,73 +44,127 @@
     <!-- 类型 2：HITL 审批中断（order_create / order_update） -->
     <!-- ============================================================ -->
     <template v-else-if="interruptData.interrupt_type === 'hitl_approval'">
-      <div class="interrupt-header">
-        <span class="interrupt-icon">⚠️</span>
-        <span class="interrupt-title">需要人工确认以下操作</span>
+      <div class="approval-heading">
+        <div class="approval-heading-icon">✓</div>
+        <div>
+          <div class="approval-eyebrow">人工审批节点</div>
+          <h2>确认采购方案</h2>
+          <p>系统已完成供应商比价与规则校验，请核对业务信息后决定是否创建订单。</p>
+        </div>
       </div>
 
-      <div class="interrupt-body">
+      <div class="approval-body">
         <div
           v-for="(action, idx) in interruptData.action_requests"
           :key="idx"
-          class="action-card"
+          class="approval-card"
         >
-          <div class="action-header">
-            <span class="action-type">{{ formatActionName(action.name) }}</span>
-          </div>
-          <div class="action-details">
-            <table class="order-table" v-if="action.args">
-              <tbody>
-                <template v-for="(val, key) in displayArgs(action.args)" :key="key">
-                  <tr>
-                    <td class="field-label">{{ formatFieldName(key) }}</td>
-                    <td class="field-value">{{ formatFieldValue(key, val) }}</td>
-                  </tr>
-                </template>
-              </tbody>
-            </table>
-            <!-- 订单明细子表 -->
-            <div v-if="getOrderDetail(action).length" class="detail-table-wrap">
-              <div class="detail-label">订单明细 ({{ getOrderDetail(action).length }} 项)</div>
-              <table class="detail-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>物料ID</th>
-                    <th>数量</th>
-                    <th>单价</th>
-                    <th>小计</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(item, di) in getOrderDetail(action)" :key="di">
-                    <td>{{ di + 1 }}</td>
-                    <td>{{ itemField(item, 'partId', 'part_id') ?? '-' }}</td>
-                    <td>{{ itemField(item, 'quantity') ?? '-' }}</td>
-                    <td>{{ itemField(item, 'unitPrice', 'unit_price') ?? '-' }}</td>
-                    <td>{{ itemField(item, 'subtotal') ?? '-' }}</td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="approval-card-header">
+            <div>
+              <span class="approval-status">等待确认</span>
+              <h3>{{ approvalView(action).title }}</h3>
+              <p>{{ approvalView(action).subtitle }}</p>
+            </div>
+            <div class="amount-block">
+              <span>订单总额</span>
+              <strong>{{ formatMoney(approvalView(action).totalAmount) }}</strong>
+              <small v-if="approvalView(action).budget !== null">
+                预算 {{ formatMoney(approvalView(action).budget) }} ·
+                结余 {{ formatMoney(approvalView(action).budgetRemaining) }}
+              </small>
             </div>
           </div>
+
+          <div class="business-grid">
+            <div class="business-item business-item-wide">
+              <span>推荐供应商</span>
+              <strong>{{ approvalView(action).supplier }}</strong>
+              <small v-if="approvalView(action).score !== null">综合评分 {{ approvalView(action).score }} 分</small>
+            </div>
+            <div class="business-item">
+              <span>采购数量</span>
+              <strong>{{ approvalView(action).quantity || '—' }} <small>片</small></strong>
+            </div>
+            <div class="business-item">
+              <span>预计交付</span>
+              <strong>{{ approvalView(action).leadTimeDays !== null ? `${approvalView(action).leadTimeDays} 天` : '—' }}</strong>
+              <small v-if="approvalView(action).expectedDate">目标日期 {{ approvalView(action).expectedDate }}</small>
+            </div>
+          </div>
+
+          <div class="material-panel" v-if="approvalView(action).items.length">
+            <div class="section-heading">
+              <div>
+                <span>采购明细</span>
+                <strong>{{ approvalView(action).partName }}</strong>
+              </div>
+              <span class="line-count">{{ approvalView(action).items.length }} 项</span>
+            </div>
+            <div class="material-row" v-for="item in approvalView(action).items" :key="item.index">
+              <div class="material-index">{{ item.index }}</div>
+              <div class="material-name">
+                <strong>{{ item.name }}</strong>
+                <small>内部物料编号已收起，可在审计信息中查看</small>
+              </div>
+              <div class="material-metric">
+                <span>数量</span>
+                <strong>{{ item.quantity }} 片</strong>
+              </div>
+              <div class="material-metric">
+                <span>单价</span>
+                <strong>{{ formatMoney(item.unitPrice) }}</strong>
+              </div>
+              <div class="material-metric material-subtotal">
+                <span>小计</span>
+                <strong>{{ formatMoney(item.subtotal) }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="rule-checks" v-if="approvalView(action).checks.length">
+            <span class="rule-check" v-for="check in approvalView(action).checks" :key="check.label">
+              <i>✓</i>{{ check.label }}
+            </span>
+          </div>
+
+          <details class="audit-details">
+            <summary>
+              <span>审计与追溯信息</span>
+              <small>仅供管理员和问题排查使用</small>
+            </summary>
+            <dl>
+              <div><dt>决策编号</dt><dd>{{ approvalView(action).audit.decisionId }}</dd></div>
+              <div><dt>规则版本</dt><dd>{{ approvalView(action).audit.policyVersion }}</dd></div>
+              <div><dt>内部物料 ID</dt><dd>{{ approvalView(action).audit.partIds }}</dd></div>
+              <div><dt>申请人</dt><dd>{{ approvalView(action).audit.applicant }}</dd></div>
+              <div><dt>订单编号</dt><dd>{{ approvalView(action).audit.orderNumber }}</dd></div>
+            </dl>
+          </details>
+        </div>
+      </div>
+
+      <div class="approval-impact">
+        <span class="impact-icon">i</span>
+        <div>
+          <strong>确认后的影响</strong>
+          <p>仅创建“待审核”采购订单，不会直接向供应商下单、付款或扣减库存；后续状态仍需采购人员在供应链平台审核。</p>
         </div>
       </div>
 
       <div class="interrupt-actions">
         <button
-          class="submit-btn approve-btn"
-          @click="handleDecision('approve')"
-          :disabled="submitting"
-        >
-          {{ submitting ? '处理中...' : '✓ 同意' }}
-        </button>
-        <button
           class="submit-btn reject-btn"
           @click="handleDecision('reject')"
           :disabled="submitting"
         >
-          {{ submitting ? '处理中...' : '✗ 拒绝' }}
+          {{ submitting ? '处理中...' : '暂不创建' }}
+        </button>
+        <button
+          class="submit-btn approve-btn"
+          @click="handleDecision('approve')"
+          :disabled="submitting"
+        >
+          {{ submitting ? '正在提交...' : '确认创建待审核订单' }}
         </button>
       </div>
     </template>
@@ -131,7 +185,8 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref } from 'vue'
+import { buildApprovalPresentation, formatMoney } from '../utils/approvalPresentation.js'
 
 const props = defineProps({
   interruptData: { type: Object, required: true },
@@ -176,67 +231,8 @@ function formatCollectedData(data) {
   }
 }
 
-function formatActionName(name) {
-  const map = {
-    'order_create': '新建采购订单',
-    'order_update': '修改采购订单'
-  }
-  return map[name] || name
-}
-
-function getOrderDetail(action) {
-  // 兼容 MCP 工具的 snake_case 参数名与历史 camelCase 参数名
-  const items = action.args && (action.args.orderDetail || action.args.order_detail)
-  return Array.isArray(items) ? items : []
-}
-
-function itemField(item, ...keys) {
-  // 订单明细项字段兼容 camelCase / snake_case
-  for (const key of keys) {
-    if (item && item[key] !== undefined && item[key] !== null) return item[key]
-  }
-  return null
-}
-
-function displayArgs(args) {
-  // 过滤掉订单明细（单独用子表展示），兼容 camelCase / snake_case
-  const skip = ['orderDetail', 'order_detail']
-  const result = {}
-  for (const [k, v] of Object.entries(args)) {
-    if (!skip.includes(k)) {
-      result[k] = v
-    }
-  }
-  return result
-}
-
-function formatFieldName(key) {
-  const map = {
-    'orderNumber': '订单编号', 'order_number': '订单编号',
-    'totalAmount': '总金额', 'total_amount': '总金额',
-    'status': '状态',
-    'orderTime': '下单时间', 'order_time': '下单时间',
-    'expectedDeliveryDate': '预计交货日期', 'expected_delivery_date': '预计交货日期',
-    'actualDeliveryDate': '实际交货日期', 'actual_delivery_date': '实际交货日期',
-    'createdBy': '创建人ID', 'created_by': '创建人ID',
-    'remark': '备注',
-    'supplierId': '供应商ID', 'supplier_id': '供应商ID',
-    'supplierName': '供应商名称', 'supplier_name': '供应商名称'
-  }
-  return map[key] || key
-}
-
-function formatFieldValue(key, val) {
-  if (key === 'status') {
-    const map = { 1: '待审核', 2: '已审核', 3: '采购中', 4: '已入库', 5: '已取消' }
-    return map[val] != null ? map[val] : String(val)
-  }
-  if (val === null || val === undefined) return '-'
-  // 对象/数组兜底：避免显示成 [object Object]
-  if (typeof val === 'object') {
-    try { return JSON.stringify(val) } catch { return String(val) }
-  }
-  return String(val)
+function approvalView(action) {
+  return buildApprovalPresentation(action)
 }
 
 // CSS class
@@ -266,9 +262,323 @@ const bannerClass = {
 }
 
 .banner-approval {
-  border: 2px solid #ef4444;
-  background: #fef2f2;
+  border: 1px solid #dbe6ef;
+  background: linear-gradient(180deg, #f8fbfd 0%, #ffffff 34%);
+  box-shadow: 0 18px 50px rgba(15, 49, 71, 0.12);
 }
+
+.approval-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 26px 20px;
+  border-bottom: 1px solid #e7eef4;
+}
+
+.approval-heading-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 14px;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #0f766e, #0d9488);
+  box-shadow: 0 8px 20px rgba(13, 148, 136, 0.24);
+}
+
+.approval-eyebrow {
+  margin-bottom: 4px;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.approval-heading h2 {
+  margin: 0;
+  color: #102a3a;
+  font-size: 21px;
+  line-height: 1.3;
+}
+
+.approval-heading p {
+  margin: 6px 0 0;
+  color: #667b88;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.approval-body { padding: 20px 26px 8px; }
+
+.approval-card {
+  overflow: hidden;
+  border: 1px solid #dfe8ee;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(25, 54, 72, 0.06);
+}
+
+.approval-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px;
+  background: linear-gradient(100deg, #f5faf9 0%, #fbfcfd 100%);
+  border-bottom: 1px solid #e5edef;
+}
+
+.approval-status {
+  display: inline-flex;
+  margin-bottom: 8px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: #9a6700;
+  background: #fff5cf;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.approval-card-header h3 {
+  margin: 0;
+  color: #132f40;
+  font-size: 18px;
+}
+
+.approval-card-header p {
+  max-width: 620px;
+  margin: 7px 0 0;
+  color: #657985;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.amount-block {
+  min-width: 220px;
+  text-align: right;
+}
+
+.amount-block > span,
+.business-item > span,
+.material-metric > span {
+  display: block;
+  color: #738793;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.amount-block strong {
+  display: block;
+  margin: 2px 0;
+  color: #0f766e;
+  font-size: 27px;
+  line-height: 1.35;
+}
+
+.amount-block small,
+.business-item small,
+.material-name small {
+  color: #8496a0;
+  font-size: 12px;
+}
+
+.business-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.5fr) 1fr 1fr;
+  gap: 12px;
+  padding: 18px 22px;
+}
+
+.business-item {
+  min-height: 76px;
+  padding: 13px 15px;
+  border: 1px solid #e5ecef;
+  border-radius: 12px;
+  background: #fbfcfd;
+}
+
+.business-item strong {
+  display: block;
+  margin: 5px 0 2px;
+  color: #183647;
+  font-size: 17px;
+}
+
+.business-item strong small { color: inherit; font-size: 12px; }
+
+.material-panel {
+  margin: 0 22px 16px;
+  border: 1px solid #e1e9ed;
+  border-radius: 13px;
+  overflow: hidden;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 15px;
+  background: #f5f8fa;
+  border-bottom: 1px solid #e1e9ed;
+}
+
+.section-heading div > span {
+  display: block;
+  color: #758994;
+  font-size: 11px;
+}
+
+.section-heading strong {
+  color: #1a394a;
+  font-size: 14px;
+}
+
+.line-count {
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #516b79;
+  background: #e8eff2;
+  font-size: 11px;
+}
+
+.material-row {
+  display: grid;
+  grid-template-columns: 34px minmax(220px, 1.6fr) repeat(3, minmax(100px, .65fr));
+  align-items: center;
+  gap: 12px;
+  padding: 14px 15px;
+}
+
+.material-index {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: #0f766e;
+  background: #e9f6f3;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.material-name strong {
+  display: block;
+  color: #183748;
+  font-size: 14px;
+}
+
+.material-metric strong {
+  display: block;
+  margin-top: 3px;
+  color: #193849;
+  font-size: 14px;
+}
+
+.material-subtotal { text-align: right; }
+.material-subtotal strong { color: #0f766e; }
+
+.rule-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 22px 16px;
+}
+
+.rule-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  border: 1px solid #cce8df;
+  border-radius: 999px;
+  color: #176b58;
+  background: #f0faf6;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.rule-check i {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffffff;
+  background: #2f9d7e;
+  font-size: 10px;
+  font-style: normal;
+}
+
+.audit-details {
+  margin: 0 22px 20px;
+  border-top: 1px dashed #d7e1e6;
+}
+
+.audit-details summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 0 4px;
+  color: #506a78;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  list-style-position: inside;
+}
+
+.audit-details summary small {
+  color: #94a3ab;
+  font-weight: 400;
+}
+
+.audit-details dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 20px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f7f9fa;
+}
+
+.audit-details dl div { min-width: 0; }
+.audit-details dt { color: #85969f; font-size: 11px; }
+.audit-details dd {
+  margin: 3px 0 0;
+  color: #415966;
+  font: 12px/1.5 'JetBrains Mono', Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.approval-impact {
+  display: flex;
+  gap: 11px;
+  margin: 8px 26px 0;
+  padding: 12px 14px;
+  border: 1px solid #dce8ee;
+  border-radius: 12px;
+  color: #476270;
+  background: #f6fafc;
+}
+
+.impact-icon {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: #ffffff;
+  background: #5f7f90;
+  font-family: Georgia, serif;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.approval-impact strong { color: #294957; font-size: 13px; }
+.approval-impact p { margin: 2px 0 0; font-size: 12px; line-height: 1.55; }
 
 /* 头部 */
 .interrupt-header {
@@ -460,21 +770,41 @@ const bannerClass = {
 }
 
 .approve-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  min-width: 210px;
+  background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 6px 16px rgba(13, 148, 136, 0.24);
 }
 
 .reject-btn {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  min-width: 116px;
+  color: #49616e;
+  background: #ffffff;
+  border: 1px solid #cbd8de;
+  box-shadow: none;
 }
 
 .interrupt-actions {
   display: flex;
   gap: 12px;
-  padding: 0 20px 16px;
-  justify-content: center;
+  padding: 18px 26px 24px;
+  justify-content: flex-end;
+  border-top: 1px solid #edf2f4;
+  margin-top: 18px;
+}
+
+@media (max-width: 760px) {
+  .interrupt-banner { margin: 10px 12px; }
+  .approval-heading, .approval-body { padding-left: 16px; padding-right: 16px; }
+  .approval-card-header { flex-direction: column; }
+  .amount-block { min-width: 0; text-align: left; }
+  .business-grid { grid-template-columns: 1fr; }
+  .material-row { grid-template-columns: 28px 1fr; }
+  .material-metric { grid-column: 2; }
+  .material-subtotal { text-align: left; }
+  .audit-details dl { grid-template-columns: 1fr; }
+  .approval-impact { margin-left: 16px; margin-right: 16px; }
+  .interrupt-actions { padding-left: 16px; padding-right: 16px; }
+  .approve-btn { min-width: 0; flex: 1; }
 }
 </style>

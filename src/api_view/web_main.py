@@ -10,11 +10,14 @@ import os
 from time import perf_counter
 
 from fastapi import FastAPI, Response
+from fastapi.responses import Response as RawResponse
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from fastapi.middleware.cors import CORSMiddleware
 
 from api_view.api import auth, chat, history
 from api_view.agent_loader import agent_loader
 from agent.logging_config import configure_logging
+from api_view.observability import configure_opentelemetry
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +48,7 @@ app = FastAPI(
     version=API_VERSION,
     lifespan=lifespan,
 )
+configure_opentelemetry(app)
 
 # ============================================================
 # CORS 中间件配置
@@ -111,6 +115,11 @@ async def health_check(response: Response):
         "service": API_TITLE,
         "version": API_VERSION
     }
+
+
+@app.get("/metrics", include_in_schema=False)
+async def metrics():
+    return RawResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 # ============================================================

@@ -3,34 +3,35 @@
     <div class="input-container">
       <!-- 输入卡片：编辑区与辅助操作收在同一个视觉容器中 -->
       <div class="input-wrapper" :class="{ focused: isFocused, streaming: streaming }">
+        <div v-if="projectName" class="composer-context">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5h7l2-2h9v13H3z"/></svg>
+          <strong>{{ projectName }}</strong>
+          <span>项目会话</span>
+        </div>
         <textarea
           ref="textareaRef"
           v-model="inputText"
           @focus="isFocused = true"
           @blur="isFocused = false"
-          @keydown.enter.exact.prevent="handleSend"
+          @keydown.enter.exact="handleEnter"
           @input="autoResize"
-          placeholder="输入消息，Enter 发送..."
+          placeholder="继续描述你的采购需求…"
+          aria-label="消息内容"
           rows="1"
-          :disabled="streaming"
+          :disabled="streaming || disabled"
           class="input-textarea"
         ></textarea>
 
         <div class="composer-toolbar">
-          <label class="toggle-label" title="控制是否在对话中展开 Agent 工具调用过程">
-            <input
-              type="checkbox"
-              :checked="showToolCalls"
-              @change="emit('toggle-tool-calls', $event.target.checked)"
-              class="toggle-checkbox"
-            />
-            <span class="toggle-switch"></span>
+          <button class="toggle-label" :class="{ 'is-on': showToolCalls }" type="button" role="switch" :aria-checked="showToolCalls" aria-label="显示执行过程" :title="showToolCalls ? '执行过程已显示，点击隐藏工具调用和中间步骤' : '执行过程已隐藏，点击显示工具调用和中间步骤'" @click="emit('toggle-tool-calls', !showToolCalls)">
+            <svg class="process-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="m4 5 4 5-4 5M11 15h5"/></svg>
             <span class="toggle-text">执行过程</span>
-          </label>
+            <span class="toggle-state">{{ showToolCalls ? '已开启' : '已关闭' }}</span>
+            <span class="toggle-switch" aria-hidden="true"><i></i></span>
+          </button>
 
           <div class="composer-actions">
-            <span v-if="!streaming" class="input-hint">Enter 发送 · Shift + Enter 换行</span>
-            <span v-else class="input-hint streaming-hint">正在生成回复...</span>
+            <span v-if="streaming" class="streaming-hint" role="status">正在生成回复…</span>
 
             <button
               v-if="!streaming"
@@ -38,31 +39,33 @@
               type="button"
               aria-label="发送消息"
               @click="handleSend"
-              :disabled="!inputText.trim()"
+              :disabled="disabled || !inputText.trim()"
+              title="发送消息"
             >
-              <span>发送</span>
               <svg viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M4 10h11M11 6l4 4-4 4" />
+                <path d="M10 15V5M5.5 9.5 10 5l4.5 4.5" />
               </svg>
             </button>
             <button
               v-else
               class="stop-btn"
               type="button"
+              aria-label="停止生成"
+              title="停止生成"
               @click="handleStop"
             >
-              <span class="stop-icon">■</span>
-              <span>停止</span>
+              <span class="stop-icon" aria-hidden="true"></span>
             </button>
           </div>
         </div>
       </div>
+      <p class="composer-footnote">Enter 发送<span aria-hidden="true"> · </span>Shift + Enter 换行</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { computed, ref, nextTick } from 'vue'
 
 /**
  * 输入区域组件
@@ -73,6 +76,8 @@ import { ref, nextTick } from 'vue'
  */
 
 const props = defineProps({
+  modelValue: { type: String, default: '' },
+  disabled: Boolean,
   streaming: {
     type: Boolean,
     default: false
@@ -80,13 +85,17 @@ const props = defineProps({
   showToolCalls: {
     type: Boolean,
     default: true
+  },
+  projectName: {
+    type: String,
+    default: ''
   }
 })
 
-const emit = defineEmits(['send', 'stop', 'toggle-tool-calls'])
+const emit = defineEmits(['send', 'stop', 'toggle-tool-calls', 'update:modelValue'])
 
 // 输入文本
-const inputText = ref('')
+const inputText = computed({ get: () => props.modelValue, set: value => emit('update:modelValue', value) })
 // 是否获取焦点
 const isFocused = ref(false)
 // textarea 引用
@@ -96,6 +105,7 @@ const textareaRef = ref(null)
  * 发送消息
  */
 function handleSend() {
+  if (props.streaming || props.disabled) return
   const text = inputText.value.trim()
   if (!text) return
 
@@ -107,6 +117,12 @@ function handleSend() {
       textareaRef.value.style.height = 'auto'
     }
   })
+}
+
+function handleEnter(event) {
+  if (event.isComposing || event.keyCode === 229) return
+  event.preventDefault()
+  handleSend()
 }
 
 /**
@@ -126,258 +142,94 @@ function autoResize() {
   textarea.style.height = 'auto'
   textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px'
 }
+
+function focus() {
+  nextTick(() => textareaRef.value?.focus())
+}
+
+defineExpose({ focus })
 </script>
 
 <style scoped>
 .input-area {
-  padding: 12px clamp(18px, 5vw, 72px) 16px;
-  background: linear-gradient(180deg, rgba(251, 250, 247, 0.78), #fbfaf7 32%);
-  border-top: 1px solid #e7dfd4;
+  flex-shrink: 0;
+  padding: 12px var(--conversation-gutter) max(14px, env(safe-area-inset-bottom));
+  background: var(--workspace-surface);
 }
-
-.input-container {
-  max-width: 920px;
-  margin: 0 auto;
-}
-
-.toggle-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-  min-height: 32px;
-  padding: 0 2px;
-}
-
-.toggle-checkbox {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.toggle-switch {
-  position: relative;
-  width: 34px;
-  height: 19px;
-  background: #d8d3ca;
-  border-radius: 999px;
-  transition: all 0.2s ease;
-}
-
-.toggle-switch::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 15px;
-  height: 15px;
-  background: #fff;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 4px rgba(32, 58, 75, 0.22);
-}
-
-.toggle-checkbox:checked + .toggle-switch {
-  background: #ee6c4d;
-}
-
-.toggle-checkbox:checked + .toggle-switch::after {
-  transform: translateX(15px);
-}
-
-.toggle-checkbox:focus-visible + .toggle-switch {
-  box-shadow: 0 0 0 3px rgba(238, 108, 77, 0.18);
-}
-
-.toggle-text {
-  font-size: 12px;
-  color: #718087;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-}
-
+.input-container { width: 100%; max-width: var(--conversation-width); margin: 0 auto; }
 .input-wrapper {
-  padding: 12px 12px 10px 16px;
+  padding: 16px 16px 12px;
+  border: 1px solid #dcded5;
+  border-radius: 22px;
   background: #fff;
-  border: 1px solid #d9d0c4;
-  border-radius: 20px;
-  box-shadow: 0 10px 28px rgba(38, 42, 39, 0.07), 0 2px 7px rgba(38, 42, 39, 0.035);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow: 0 2px 9px #26302606;
+  transition: border-color .16s, box-shadow .16s;
 }
-
-.input-wrapper.focused {
-  border-color: #ee6c4d;
-  box-shadow: 0 0 0 3px rgba(238, 108, 77, 0.11), 0 13px 30px rgba(38, 42, 39, 0.08);
-}
-
-.input-wrapper.streaming {
-  background: #fffafa;
-  border-color: #efc9bf;
-}
-
+.input-wrapper.focused { border-color: #a6b3a0; box-shadow: 0 0 0 2px #90a28512, 0 3px 12px #26302608; }
+.input-wrapper.streaming { background: #fdfefb; }
 .input-textarea {
   display: block;
   width: 100%;
-  box-sizing: border-box;
-  border: none;
-  background: transparent;
-  font-size: 15px;
-  line-height: 1.55;
-  resize: none;
-  outline: none;
-  min-height: 30px;
+  min-height: 38px;
   max-height: 200px;
-  padding: 4px 4px 6px 0;
-  color: #203a4b;
-  font-family: inherit;
-  font-weight: 400;
+  padding: 0 3px 8px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #29352d;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.65;
+  resize: none;
 }
-
-.input-textarea::placeholder {
-  color: #9babb3;
-}
-
-.input-textarea:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.composer-toolbar,
-.composer-actions {
-  display: flex;
-  align-items: center;
-}
-
-.composer-toolbar {
-  justify-content: space-between;
-  gap: 16px;
-  min-height: 36px;
-  margin-top: 3px;
-}
-
-.composer-actions {
-  justify-content: flex-end;
-  gap: 14px;
-}
-
-.input-hint {
-  color: #a09d95;
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.send-btn {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 0 15px;
-  background: #ee6c4d;
+.input-textarea::placeholder { color: #747d71; }
+.input-textarea:disabled { color: #687161; cursor: default; opacity: 1; }
+.composer-toolbar, .composer-actions { display: flex; align-items: center; gap: 12px; }
+.composer-toolbar { justify-content: space-between; gap: 10px; }
+.composer-actions { margin-left: auto; }
+.toggle-label { position: relative; display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 5px 9px; border: 1px solid #daddd3; border-radius: 8px; background:#f5f6f2; color: #606b58; font:inherit; cursor: pointer; user-select: none; }
+.toggle-label.is-on { color: #36553b; background: #edf4e8; border-color:#bdcfb4; }
+.toggle-label:hover { background: #e9eee4; }
+.toggle-label:focus-visible { outline: 2px solid #869e79; outline-offset: 2px; }
+.toggle-state{font-size:12px;font-weight:600}
+.toggle-switch{box-sizing:content-box;flex-shrink:0;display:inline-flex;align-items:center;width:23px;height:12px;margin-left:2px;padding:2px;border-radius:20px;background:#9ba391;transition:background .15s}
+.toggle-switch i{width:12px;height:12px;display:block;border-radius:50%;background:#fff;transition:transform .15s}
+.is-on .toggle-switch{background:#55764a}
+.is-on .toggle-switch i{transform:translateX(11px)}
+.process-icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.toggle-text { font-size: 12px; font-weight: 550; }
+.toggle-label { flex-shrink: 0; white-space: nowrap; }
+.send-btn, .stop-btn {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  padding: 7px;
+  border: 0;
+  border-radius: 50%;
+  background: #354a39;
   color: #fff;
-  border: none;
-  border-radius: 11px;
-  font-size: 13px;
-  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 7px 14px rgba(238, 108, 77, 0.22);
+  transition: background .15s;
 }
-
-.send-btn svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.send-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.send-btn:hover:not(:disabled), .stop-btn:hover { background: #203825; }
+.send-btn:disabled { background: #eeefe9; color: #a3ab9c; cursor: default; }
+.send-btn:focus-visible, .stop-btn:focus-visible { outline: 2px solid #7a9770; outline-offset: 3px; }
+.stop-icon { width: 11px; height: 11px; border-radius: 2px; background: currentColor; }
+.streaming-hint { font-size: 12px; color: #64735d; }
+.composer-footnote { margin: 9px 0 0; text-align: center; color: #757d70; font-size: 11px; line-height: 1.5; }
+.composer-context { display: flex; align-items: center; gap: 7px; margin-bottom: 12px; padding: 0 3px; color: #58684f; }
+.composer-context svg { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
+.composer-context strong { overflow: hidden; font-size: 12px; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
+.composer-context > span { margin-left: auto; flex-shrink: 0; color: #6f7b64; font-size: 11px; }
+@media (max-width: 760px) {
+  .input-area { padding: 8px 12px max(10px, env(safe-area-inset-bottom)); }
+  .input-wrapper { padding: 14px 13px 10px; border-radius: 18px; }
+  .input-textarea { font-size: 16px; }
+  .composer-footnote { font-size: 11px; margin-top: 7px; }
 }
-
-.send-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: #d9573b;
-  box-shadow: 0 10px 18px rgba(238, 108, 77, 0.3);
-}
-
-.send-btn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.send-btn:disabled {
-  background: #e9e4dc;
-  color: #a9a59e;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.stop-btn {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 0 15px;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: #fff;
-  border: none;
-  border-radius: 11px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-  animation: stopPulse 2s ease-in-out infinite;
-}
-
-.stop-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
-}
-
-.stop-btn:active {
-  transform: translateY(0);
-}
-
-.stop-icon {
-  font-size: 12px;
-}
-
-.streaming-hint {
-  color: #dc5d45;
-  animation: blink 1.5s ease-in-out infinite;
-}
-
-@media (max-width: 720px) {
-  .input-area {
-    padding: 10px 12px 12px;
-  }
-
-  .input-wrapper {
-    padding: 10px 10px 8px 13px;
-    border-radius: 17px;
-  }
-
-  .input-hint {
-    display: none;
-  }
-
-  .composer-toolbar {
-    gap: 10px;
-  }
-}
-
-@keyframes stopPulse {
-  0%, 100% { box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3); }
-  50% { box-shadow: 0 2px 16px rgba(239, 68, 68, 0.5); }
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
+@media (max-width: 460px) { .streaming-hint { display: none; } }
+@media (prefers-reduced-motion: reduce) { .input-wrapper, .send-btn, .stop-btn { transition: none; } }
 </style>

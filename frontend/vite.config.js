@@ -25,6 +25,24 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: backendUrl,
           changeOrigin: true,
+          configure(proxy) {
+            proxy.on('error', (_error, _request, response) => {
+              if (!response || typeof response.writeHead !== 'function' || response.destroyed || response.writableEnded) return
+              // SSE 已经开始时保留断流语义，不能在流中间追加 JSON 错误。
+              if (response.headersSent) {
+                response.destroy()
+                return
+              }
+              response.writeHead(503, {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Retry-After': '5',
+              })
+              response.end(JSON.stringify({ detail: {
+                code: 'backend_unavailable',
+                message: '智能助手服务暂时不可用，可能正在启动，请稍后重试。',
+              } }))
+            })
+          },
         }
       }
     }

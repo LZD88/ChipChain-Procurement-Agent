@@ -248,6 +248,8 @@ portalocker==3.2.0
 posthog==7.10.0
 preshed==3.0.13
 prometheus_client==0.25.0
+opentelemetry-instrumentation-fastapi==0.65b0
+opentelemetry-instrumentation-httpx==0.65b0
 prompt_toolkit==3.0.52
 propcache==0.4.1
 protobuf==6.33.6

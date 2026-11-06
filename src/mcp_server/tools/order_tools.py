@@ -1,12 +1,23 @@
 import random
+import hashlib
+import json
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from fastmcp import FastMCP, Context
+from mcp_server.tools.procurement_tools import consume_decision, validate_decision
 
 from typing import Optional, List
 
 GROUP_NAME = "order"
+
+
+def _positive_decimal(value) -> Optional[Decimal]:
+    try:
+        parsed = Decimal(str(value))
+        return parsed if parsed > 0 and parsed.as_tuple().exponent >= -2 else None
+    except (InvalidOperation, TypeError, ValueError):
+        return None
 
 
 def _generate_order_number() -> str:
@@ -16,18 +27,26 @@ def _generate_order_number() -> str:
     return f"PO{today}{suffix}"
 
 
-def _prepare_request(data: dict) -> dict:
-    """填充默认值并序列化请求体：Decimal→float，date→ISO字符串"""
+def _idempotency_key(decision_id: str, order_detail: List[dict], expected_delivery_date: Optional[str]) -> str:
+    canonical = json.dumps({
+        "decisionId": decision_id,
+        "orderDetail": order_detail,
+        "expectedDeliveryDate": expected_delivery_date,
+    }, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return "agent-order:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _deterministic_order_number(decision_id: str) -> str:
+    digest = hashlib.sha256(decision_id.encode("utf-8")).hexdigest()[:10].upper()
+    return f"POA{datetime.now().strftime('%Y%m%d')}{digest}"
+
+
+def _prepare_create_request(data: dict) -> dict:
+    """仅为创建请求生成订单号；时间、金额、状态和创建人均由 ERP 服务端生成。"""
     # 自动生成 orderNumber
     if not data.get("orderNumber"):
         data["orderNumber"] = _generate_order_number()
 
-    # 默认 orderTime（格式：yyyy-MM-ddTHH:mm:ss.SSS，匹配后端 CustomLocalDateTimeDeserializer）
-    if not data.get("orderTime"):
-        now = datetime.now()
-        data["orderTime"] = now.strftime("%Y-%m-%dT%H:%M:%S.") + f"{now.microsecond // 1000:03d}"
-
-    # 递归序列化
     return _serialize_request(data)
 
 
@@ -53,13 +72,10 @@ def register_order_tools(mcp: FastMCP):
     @mcp.tool(name=f"{GROUP_NAME}_create")
     async def create_order(
         order_detail: List[dict],
+        decision_id: str,
         order_number: Optional[str] = None,
-        total_amount: Optional[float] = None,
-        status: Optional[int] = None,
-        order_time: Optional[str] = None,
         expected_delivery_date: Optional[str] = None,
-        actual_delivery_date: Optional[str] = None,
-        created_by: Optional[int] = None,
+        policy_version: str = "supplier-score-v1",
         remark: Optional[str] = None,
         ctx: Context = None,
     ) -> dict:
@@ -67,49 +83,54 @@ def register_order_tools(mcp: FastMCP):
         创建采购订单（POST /orders/create）。
 
         orderNumber 不传则自动生成（规则：PO+年月日+3位随机数字）。
-        orderTime 不传则默认当前时间（格式：yyyy-MM-ddTHH:mm:ss.SSS）。
         orderDetail 必填，至少包含一个明细项；每项需提供 partId、quantity、unitPrice。
+        decisionId 必须来自 procurement_compare 的原始结果，用于审计回放。
 
         Args:
-            order_detail: 订单明细列表，每项需提供 partId, quantity, unitPrice，可选 subtotal, remark
+            order_detail: 订单明细列表，每项需提供 partId, quantity, unitPrice，可选 remark
+            decision_id: procurement_compare 返回的决策 ID
             order_number: 订单编号（唯一标识），不传则自动生成
-            total_amount: 订单总金额，不传则自动根据明细计算
-            status: 订单状态(1-待审核, 2-已审核, 3-采购中, 4-已入库, 5-已取消)，默认1
-            order_time: 下单时间，格式 yyyy-MM-ddTHH:mm:ss.SSS，不传则默认当前时间
             expected_delivery_date: 预计交货日期，格式 yyyy-MM-dd
-            actual_delivery_date: 实际交货日期，格式 yyyy-MM-dd
-            created_by: 创建人 ID
+            policy_version: 比价规则版本，必须与决策结果一致
             remark: 备注
         """
         http_client = ctx.request_context.lifespan_context.get("http_client")
 
+        if not decision_id or not decision_id.startswith("DEC-"):
+            return {"error": "创建订单必须携带 procurement_compare 返回的有效 decision_id"}
+        if policy_version != "supplier-score-v1":
+            return {"error": "不支持的采购决策规则版本"}
+        if not order_detail:
+            return {"error": "订单至少需要一项物料明细"}
+        allowed_detail_fields = {"partId", "quantity", "unitPrice", "remark"}
+        for detail in order_detail:
+            if not isinstance(detail, dict) or set(detail) - allowed_detail_fields:
+                return {"error": "订单明细只允许 partId、quantity、unitPrice、remark 字段"}
+            if not isinstance(detail.get("partId"), int) or not isinstance(detail.get("quantity"), int) \
+                    or detail["quantity"] <= 0 or _positive_decimal(detail.get("unitPrice")) is None:
+                return {"error": "订单明细必须包含有效的 partId、正整数 quantity 和正数 unitPrice"}
+        decision_error = validate_decision(decision_id, policy_version, order_detail)
+        if decision_error:
+            return {"error": decision_error}
+
         # 构建请求体（映射到 API 字段名）
         request_data = {}
-        if order_number is not None:
-            request_data["orderNumber"] = order_number
-        if total_amount is not None:
-            request_data["totalAmount"] = total_amount
-        if status is not None:
-            request_data["status"] = status
-        if order_time is not None:
-            request_data["orderTime"] = order_time
+        request_data["orderNumber"] = order_number or _deterministic_order_number(decision_id)
         if expected_delivery_date is not None:
             request_data["expectedDeliveryDate"] = expected_delivery_date
-        if actual_delivery_date is not None:
-            request_data["actualDeliveryDate"] = actual_delivery_date
-        if created_by is not None:
-            request_data["createdBy"] = created_by
-        if remark is not None:
-            request_data["remark"] = remark
+        audit_remark = f"decisionId={decision_id}; policyVersion={policy_version}"
+        request_data["remark"] = f"{audit_remark}; {remark}" if remark else audit_remark
         if order_detail is not None:
             request_data["orderDetail"] = order_detail
 
-        request_data = _prepare_request(request_data)
+        request_data = _prepare_create_request(request_data)
+        idempotency_key = _idempotency_key(decision_id, order_detail, expected_delivery_date)
 
         try:
             response = await http_client.post(
                 "/orders/create",
-                json=request_data
+                json=request_data,
+                headers={"Idempotency-Key": idempotency_key},
             )
             response.raise_for_status()
             result = response.json()
@@ -119,6 +140,7 @@ def register_order_tools(mcp: FastMCP):
                     "error": f"API error: code={result.get('code')}, message={result.get('message')}"
                 }
 
+            consume_decision(decision_id)
             return result.get("data", {})
         except Exception as e:
             return {"error": str(e)}
@@ -127,13 +149,7 @@ def register_order_tools(mcp: FastMCP):
     async def update_order(
         order_id: int,
         order_detail: Optional[List[dict]] = None,
-        order_number: Optional[str] = None,
-        total_amount: Optional[float] = None,
-        status: Optional[int] = None,
-        order_time: Optional[str] = None,
         expected_delivery_date: Optional[str] = None,
-        actual_delivery_date: Optional[str] = None,
-        created_by: Optional[int] = None,
         remark: Optional[str] = None,
         ctx: Context = None,
     ) -> dict:
@@ -141,44 +157,35 @@ def register_order_tools(mcp: FastMCP):
         更新采购订单（PUT /orders/update/{id}）。
 
         orderDetail 为可选，传入则替换原有明细。
-        其他字段与创建订单格式一致。
+        Agent 只能修改待审核订单的预计交期、备注和物料明细；状态流转由采购人员完成。
 
         Args:
             order_id: 订单 ID（路径参数，必填）
             order_detail: 订单明细列表（可选），每项需提供 partId, quantity, unitPrice
-            order_number: 订单编号
-            total_amount: 订单总金额
-            status: 订单状态(1-待审核, 2-已审核, 3-采购中, 4-已入库, 5-已取消)
-            order_time: 下单时间
             expected_delivery_date: 预计交货日期
-            actual_delivery_date: 实际交货日期
-            created_by: 创建人 ID
             remark: 备注
         """
         http_client = ctx.request_context.lifespan_context.get("http_client")
 
+        if order_detail is not None:
+            allowed_detail_fields = {"partId", "quantity", "unitPrice", "remark"}
+            for detail in order_detail:
+                if not isinstance(detail, dict) or set(detail) - allowed_detail_fields:
+                    return {"error": "订单明细只允许 partId、quantity、unitPrice、remark 字段"}
+                if not isinstance(detail.get("partId"), int) or not isinstance(detail.get("quantity"), int) \
+                        or detail["quantity"] <= 0 or _positive_decimal(detail.get("unitPrice")) is None:
+                    return {"error": "订单明细必须包含有效的 partId、正整数 quantity 和正数 unitPrice"}
+
         # 构建请求体（映射到 API 字段名，只包含非 None 字段）
         request_data = {}
-        if order_number is not None:
-            request_data["orderNumber"] = order_number
-        if total_amount is not None:
-            request_data["totalAmount"] = total_amount
-        if status is not None:
-            request_data["status"] = status
-        if order_time is not None:
-            request_data["orderTime"] = order_time
         if expected_delivery_date is not None:
             request_data["expectedDeliveryDate"] = expected_delivery_date
-        if actual_delivery_date is not None:
-            request_data["actualDeliveryDate"] = actual_delivery_date
-        if created_by is not None:
-            request_data["createdBy"] = created_by
         if remark is not None:
             request_data["remark"] = remark
         if order_detail is not None:
             request_data["orderDetail"] = order_detail
 
-        request_data = _prepare_request(request_data)
+        request_data = _serialize_request(request_data)
 
         try:
             response = await http_client.put(

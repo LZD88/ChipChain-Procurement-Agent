@@ -6,6 +6,7 @@
 
 import logging
 import re
+import uuid
 from typing import Any, List
 from datetime import datetime
 
@@ -17,9 +18,13 @@ from agent.schema import (
     SessionMessagesResponse,
     DeleteSessionResponse,
     Message,
+    ProjectCreateRequest,
+    ProjectUpdateRequest,
+    SessionUpdateRequest,
 )
 from api_view.agent_loader import agent_loader
 from api_view.auth import require_same_origin_request, require_thread, require_user
+from agent.mysql_storage import mysql_storage
 
 logger = logging.getLogger(__name__)
 
@@ -237,6 +242,7 @@ async def get_sessions(
     """获取会话列表"""
     try:
         all_thread_ids = await agent_loader.get_all_thread_ids(user_id)
+        metadata = await mysql_storage.get_thread_metadata(user_id)
 
         sessions = []
         for thread_id in all_thread_ids:
@@ -248,34 +254,40 @@ async def get_sessions(
                     messages = await agent_loader.get_current_messages(thread_id)
                     serialized = serialize_messages_from_checkpoint(messages)
 
-                if serialized:
-                    first_user_msg = next(
-                        (m for m in serialized if m.get("role") == "user"),
-                        None
-                    )
-                    if first_user_msg:
-                        first_content = first_user_msg.get("content", "") or ""
-                        title = first_content[:50] if first_content else "新对话"
-                        if len(first_content) > 50:
-                            title += "..."
-                    else:
-                        title = "新对话"
+                # 兼容修复前遗留的空记录：没有用户消息也没有 checkpoint 的会话不展示。
+                if not serialized:
+                    continue
 
-                    message_count = len(serialized)
-                    updated_at = await agent_loader.get_session_updated_at(thread_id)
+                first_user_msg = next(
+                    (m for m in serialized if m.get("role") == "user"),
+                    None
+                )
+                if first_user_msg:
+                    first_content = first_user_msg.get("content", "") or ""
+                    title = first_content[:50] if first_content else "新会话"
+                    if len(first_content) > 50:
+                        title += "..."
+                else:
+                    title = "新会话"
 
-                    sessions.append(Session(
-                        thread_id=thread_id,
-                        title=title,
-                        created_at=updated_at,
-                        updated_at=updated_at,
-                        message_count=message_count
-                    ))
+                message_count = len(serialized)
+                updated_at = await agent_loader.get_session_updated_at(thread_id)
+
+                thread_meta = metadata.get(thread_id, {})
+                sessions.append(Session(
+                    thread_id=thread_id,
+                    title=thread_meta.get("custom_title") or title,
+                    created_at=thread_meta.get("created_at") or updated_at,
+                    updated_at=updated_at,
+                    message_count=message_count,
+                    project_id=thread_meta.get("project_id"),
+                    pinned=bool(thread_meta.get("pinned", False)),
+                ))
             except Exception:
                 logger.warning("跳过无法读取的会话：thread=%s", thread_id, exc_info=True)
                 continue
 
-        sessions.sort(key=lambda x: x.updated_at, reverse=True)
+        sessions.sort(key=lambda x: (x.pinned, x.updated_at), reverse=True)
 
         total = len(sessions)
         start = (page - 1) * limit
@@ -356,12 +368,62 @@ async def delete_session(thread_id: str, user_id: str = Depends(require_thread))
 
 
 @router.patch("/history/{thread_id}")
-async def update_session_title(thread_id: str, title: str = Query(..., description="新的会话标题"),
-                               user_id: str = Depends(require_thread)):
-    """更新会话标题"""
+async def update_session(thread_id: str, body: SessionUpdateRequest,
+                         user_id: str = Depends(require_thread)):
+    """更新会话名称、置顶状态或所属项目。"""
+    title = body.title.strip() if body.title is not None else None
+    if body.title is not None and not title:
+        raise HTTPException(status_code=422, detail="会话名称不能为空")
+    success = await mysql_storage.update_thread_metadata(
+        thread_id,
+        user_id,
+        title=title,
+        pinned=body.pinned,
+        project_id_marker="project_id" in body.model_fields_set,
+        project_id=body.project_id,
+    )
+    if not success:
+        raise HTTPException(status_code=404, detail="会话或项目不存在")
+    return {"success": True, "thread_id": thread_id}
+
+
+@router.get("/projects")
+async def get_projects(user_id: str = Depends(require_user)):
+    """获取当前账号的会话项目。"""
+    projects = await mysql_storage.list_projects(user_id)
+    return {"projects": projects}
+
+
+@router.post("/projects", status_code=201)
+async def create_project(body: ProjectCreateRequest, user_id: str = Depends(require_user)):
+    """创建会话项目；项目只用于组织会话，不改变业务权限。"""
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="项目名称不能为空")
+    project_id = str(uuid.uuid4())
+    await mysql_storage.create_project(project_id, user_id, name)
+    return {"project_id": project_id, "name": name}
+
+
+@router.patch("/projects/{project_id}")
+async def update_project(project_id: str, body: ProjectUpdateRequest,
+                         user_id: str = Depends(require_user)):
+    """修改当前账号拥有的会话项目名称。"""
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="项目名称不能为空")
+    if not await mysql_storage.update_project(project_id, user_id, name):
+        raise HTTPException(status_code=404, detail="项目不存在")
+    return {"success": True, "project_id": project_id, "name": name}
+
+
+@router.delete("/projects/{project_id}")
+async def delete_project(project_id: str, user_id: str = Depends(require_user)):
+    """删除项目，保留并解除项目内会话的归属。"""
+    if not await mysql_storage.delete_project(project_id, user_id):
+        raise HTTPException(status_code=404, detail="项目不存在")
     return {
         "success": True,
-        "message": "标题更新功能待实现",
-        "thread_id": thread_id,
-        "title": title
+        "project_id": project_id,
+        "message": "项目已删除，原有会话已移至独立会话",
     }

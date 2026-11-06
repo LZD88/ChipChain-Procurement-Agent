@@ -19,6 +19,24 @@ const result = (id, text, status = 'done') => ({ type: 'tool_result', tool_call_
 const end = id => ({ type: 'tool_end', tool_call_id: id })
 const done = { type: 'done', thread_id: 'test-thread', content: '完成' }
 
+test('服务端创建会话后立即回传 ID，不必等待模型完成', async t => {
+  t.mock.method(globalThis, 'fetch', async () => streamResponse([
+    { type: 'session', thread_id: 'project-thread' },
+    { type: 'progress', stage: 'reasoning', message: '正在核验库存与供应商…' },
+    { type: 'token', content: '处理中' },
+    { type: 'done', thread_id: 'project-thread', content: '处理中' }
+  ]))
+  const received = []
+  const progress = []
+  const result = await streamChat('采购', null, {
+    onSession: data => received.push(data.thread_id),
+    onProgress: data => progress.push(data.message)
+  })
+  assert.deepEqual(received, ['project-thread'])
+  assert.deepEqual(progress, ['正在核验库存与供应商…'])
+  assert.equal(result.thread_id, 'project-thread')
+})
+
 test('并行 ls 的分片参数、乱序结果和界面状态按 ID 匹配', async t => {
   t.mock.method(globalThis, 'fetch', async () => streamResponse([
     start('main'), start('proc'), start('order'),

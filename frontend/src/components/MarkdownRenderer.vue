@@ -216,10 +216,22 @@ function retryImage(event) {
 }
 
 /* ============ 表格样式 ============ */
+.markdown-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin: 16px 0;
+  border: 1px solid #e0e4da;
+  border-radius: 10px;
+}
+.markdown-table-wrap:focus-visible { outline: 2px solid #879a7d; outline-offset: 3px; }
+.markdown-table-wrap table { margin: 0; min-width: 100%; }
+.markdown-table-wrap th, .markdown-table-wrap td { white-space: nowrap; }
+.markdown-renderer .markdown-table-wrap th { background: #f1f4ed; color: #354631; }
+.markdown-table-wrap tbody tr:nth-child(2n) { background: #f7f8f4; }
 .markdown-renderer table {
   width: 100%;
   border-collapse: collapse;
-  margin: 14px 0;
+  margin: 0;
   font-size: 14px;
 }
 

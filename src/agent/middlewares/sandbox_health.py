@@ -17,6 +17,7 @@ from typing import Any, Optional
 from langchain.agents.middleware import AgentMiddleware
 
 from agent.backends.sandbox_proxy import SandboxBackendProxy
+from agent.backends.sandbox_healthcheck import check_sandbox
 
 logger = logging.getLogger(__name__)
 
@@ -58,11 +59,7 @@ class SandboxHealthMiddleware(AgentMiddleware):
         return None
 
     async def _check(self) -> bool:
-        try:
-            await self._backend.aexecute("echo ok")
-            return True
-        except Exception:
-            return False
+        return await check_sandbox(self._backend)
 
     async def _recover(self) -> None:
         from agent.backends.sandbox_manager import recreate_user_sandbox

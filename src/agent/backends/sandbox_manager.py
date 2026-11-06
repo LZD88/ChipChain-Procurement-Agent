@@ -10,9 +10,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from weakref import WeakValueDictionary
 
 from agent.backends.sandbox_proxy import SandboxBackendProxy
 from agent.backends.sandbox_setup import setup_sandbox
+from agent.backends.sandbox_healthcheck import check_sandbox
 from agent.config import SANDBOX_CONFIG
 from agent.env_utils import SANDBOX_PREWARM_REPLENISH
 from agent.mysql_storage import MySQLStorage
@@ -25,8 +27,18 @@ SANDBOX_BACKENDS: dict[str, SandboxBackendProxy] = {}
 
 _warm_reserve: SandboxBackendProxy | None = None
 _warm_lock = asyncio.Lock()
+_replenish_task: asyncio.Task | None = None
 
 _storage: MySQLStorage | None = None
+_user_locks: WeakValueDictionary[str, asyncio.Lock] = WeakValueDictionary()
+
+
+def _user_lock(user_id: str) -> asyncio.Lock:
+    lock = _user_locks.get(user_id)
+    if lock is None:
+        lock = asyncio.Lock()
+        _user_locks[user_id] = lock
+    return lock
 
 def _sandbox_storage() -> MySQLStorage:
     if _storage is None:
@@ -54,6 +66,12 @@ async def pre_warm() -> None:
 
 
 async def ensure_sandbox_for_user(user_id: str) -> SandboxBackendProxy:
+    # 多条会话可以同时运行，但同一用户的首次环境初始化只执行一次。
+    async with _user_lock(user_id):
+        return await _ensure_sandbox_for_user(user_id)
+
+
+async def _ensure_sandbox_for_user(user_id: str) -> SandboxBackendProxy:
     """
     获取或创建某个用户的沙箱
 
@@ -66,7 +84,8 @@ async def ensure_sandbox_for_user(user_id: str) -> SandboxBackendProxy:
     proxy = SANDBOX_BACKENDS.get(user_id)
     if proxy is not None:
         try:
-            await proxy.aexecute("echo ok")
+            if not await check_sandbox(proxy):
+                raise RuntimeError("沙箱健康检查失败")
             logger.debug("用户 %s 命中沙箱缓存: %s", user_id, proxy.id)
             return proxy
         except Exception:
@@ -102,15 +121,17 @@ async def ensure_sandbox_for_user(user_id: str) -> SandboxBackendProxy:
             return await _rebuild_sandbox(user_id)
 
         try:
-            await sandbox_backend.aexecute("echo ok")
+            if not await check_sandbox(sandbox_backend):
+                raise RuntimeError("沙箱健康检查失败")
         except Exception:
             logger.warning("已连接的沙箱 %s 不可达，创建新沙箱", sandbox_id)
             return await _rebuild_sandbox(user_id)
 
         proxy = SandboxBackendProxy(sandbox_backend)
         SANDBOX_BACKENDS[user_id] = proxy
-        await _sandbox_storage().bind_sandbox(user_id, sandbox_id)
-        logger.info("用户 %s 沙箱恢复完成: %s", user_id, sandbox_id)
+        # setup_sandbox 可能已在重连失败后创建替代环境，绑定实际返回的 ID。
+        await _sandbox_storage().bind_sandbox(user_id, proxy.id)
+        logger.info("用户 %s 沙箱恢复完成: %s", user_id, proxy.id)
         return proxy
 
     # 状态 4: 无记录，创建新沙箱
@@ -124,7 +145,12 @@ async def recreate_user_sandbox(user_id: str) -> SandboxBackendProxy:
     创建新沙箱（含 skills 播种 + venv），替换 proxy 内的 backend，
     删除旧沙箱，更新 MySQL 绑定。不包含 AGENTS.md 上传，由调用方负责。
     """
-    return await _rebuild_sandbox(user_id, SANDBOX_BACKENDS.get(user_id))
+    async with _user_lock(user_id):
+        proxy = SANDBOX_BACKENDS.get(user_id)
+        # 另一条会话可能刚完成恢复，避免再次重建并删除正在使用的环境。
+        if proxy is not None and await check_sandbox(proxy):
+            return proxy
+        return await _rebuild_sandbox(user_id, proxy)
 
 
 async def cleanup_user(user_id: str) -> None:
@@ -142,7 +168,15 @@ async def cleanup_user(user_id: str) -> None:
 
 async def shutdown() -> None:
     """清理所有沙箱（含预热），释放资源。"""
-    global _warm_reserve, _storage
+    global _warm_reserve, _storage, _replenish_task
+
+    if _replenish_task is not None:
+        _replenish_task.cancel()
+        try:
+            await _replenish_task
+        except asyncio.CancelledError:
+            pass
+        _replenish_task = None
 
     if _warm_reserve is not None:
         try:
@@ -202,8 +236,11 @@ async def _rebuild_sandbox(
 
 def _schedule_replenish() -> None:
     """在有后续用户到来时，惰性调度后台补充预热（开关控制）。"""
-    if SANDBOX_PREWARM_REPLENISH:
-        asyncio.create_task(_replenish_warm())
+    global _replenish_task
+    if not SANDBOX_PREWARM_REPLENISH:
+        return
+    if _replenish_task is None or _replenish_task.done():
+        _replenish_task = asyncio.create_task(_replenish_warm())
 
 
 async def _replenish_warm() -> None:

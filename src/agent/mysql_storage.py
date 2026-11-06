@@ -125,11 +125,24 @@ APPLICATION_DDL = {
         INDEX idx_auth_expiry (expires_at),
         FOREIGN KEY (username) REFERENCES app_users(username) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "chat_projects": """CREATE TABLE IF NOT EXISTS chat_projects (
+        project_id VARCHAR(64) NOT NULL PRIMARY KEY,
+        user_id VARCHAR(32) NOT NULL,
+        name VARCHAR(40) NOT NULL,
+        created_at DATETIME(6) NOT NULL,
+        updated_at DATETIME(6) NOT NULL,
+        INDEX idx_project_user (user_id, updated_at),
+        FOREIGN KEY (user_id) REFERENCES app_users(username) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
     "chat_threads": """CREATE TABLE IF NOT EXISTS chat_threads (
         thread_id VARCHAR(150) NOT NULL PRIMARY KEY,
         user_id VARCHAR(32) NOT NULL,
+        project_id VARCHAR(64) NULL,
+        custom_title VARCHAR(80) NULL,
+        pinned TINYINT(1) NOT NULL DEFAULT 0,
         created_at DATETIME(6) NOT NULL,
-        INDEX idx_thread_user (user_id),
+        INDEX idx_thread_user (user_id, pinned, created_at),
+        INDEX idx_thread_project (project_id),
         FOREIGN KEY (user_id) REFERENCES app_users(username) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
     "session_display_messages": """CREATE TABLE IF NOT EXISTS session_display_messages (
@@ -196,10 +209,27 @@ class MySQLStorage:
                 async with self.cursor() as cur:
                     for table_name, ddl in APPLICATION_DDL.items():
                         await _create_table_if_missing(cur, table_name, ddl)
+                    await self._upgrade_application_schema(cur)
                 self._checkpointer = saver
             except BaseException:
                 await self.close()
                 raise
+
+    async def _upgrade_application_schema(self, cur):
+        """为已有本地数据库补充会话项目、标题与置顶字段。"""
+        await cur.execute(
+            "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+            "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chat_threads'"
+        )
+        columns = {row["COLUMN_NAME"] for row in await cur.fetchall()}
+        additions = {
+            "project_id": "ALTER TABLE chat_threads ADD COLUMN project_id VARCHAR(64) NULL",
+            "custom_title": "ALTER TABLE chat_threads ADD COLUMN custom_title VARCHAR(80) NULL",
+            "pinned": "ALTER TABLE chat_threads ADD COLUMN pinned TINYINT(1) NOT NULL DEFAULT 0",
+        }
+        for name, ddl in additions.items():
+            if name not in columns:
+                await cur.execute(ddl)
 
     async def close(self):
         self._checkpointer = None
@@ -235,21 +265,112 @@ class MySQLStorage:
                 )
             else:
                 await cur.execute(
-                    "SELECT DISTINCT c.thread_id FROM checkpoints c "
-                    "JOIN chat_threads t ON c.thread_id = t.thread_id "
-                    "WHERE c.checkpoint_ns = '' AND t.user_id = %s", (user_id,),
+                    "SELECT thread_id FROM chat_threads WHERE user_id = %s "
+                    "ORDER BY created_at DESC", (user_id,),
                 )
             return [row["thread_id"] for row in await cur.fetchall()]
+
+    async def get_thread_metadata(self, user_id):
+        async with self.cursor() as cur:
+            await cur.execute(
+                "SELECT thread_id, project_id, custom_title, pinned, created_at "
+                "FROM chat_threads WHERE user_id = %s", (user_id,),
+            )
+            return {row["thread_id"]: row for row in await cur.fetchall()}
+
+    async def update_thread_metadata(self, thread_id, user_id, *, title=None, pinned=None,
+                                     project_id_marker=False, project_id=None):
+        updates = []
+        values = []
+        if title is not None:
+            updates.append("custom_title = %s")
+            values.append(title)
+        if pinned is not None:
+            updates.append("pinned = %s")
+            values.append(1 if pinned else 0)
+        if project_id_marker:
+            if project_id is not None and not await self.project_belongs_to(project_id, user_id):
+                return False
+            updates.append("project_id = %s")
+            values.append(project_id)
+        if not updates:
+            return True
+        values.extend([thread_id, user_id])
+        async with self.cursor() as cur:
+            await cur.execute(
+                f"UPDATE chat_threads SET {', '.join(updates)} WHERE thread_id = %s AND user_id = %s",
+                tuple(values),
+            )
+            return cur.rowcount == 1
+
+    async def create_project(self, project_id, user_id, name):
+        async with self.cursor() as cur:
+            await cur.execute(
+                "INSERT INTO chat_projects (project_id, user_id, name, created_at, updated_at) "
+                "VALUES (%s, %s, %s, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))",
+                (project_id, user_id, name),
+            )
+
+    async def list_projects(self, user_id):
+        async with self.cursor() as cur:
+            await cur.execute(
+                "SELECT project_id, name, created_at, updated_at FROM chat_projects "
+                "WHERE user_id = %s ORDER BY updated_at DESC, created_at DESC", (user_id,),
+            )
+            return await cur.fetchall()
+
+    async def update_project(self, project_id, user_id, name):
+        async with self.cursor() as cur:
+            await cur.execute(
+                "UPDATE chat_projects SET name = %s, updated_at = UTC_TIMESTAMP(6) "
+                "WHERE project_id = %s AND user_id = %s",
+                (name, project_id, user_id),
+            )
+            return cur.rowcount == 1
+
+    async def delete_project(self, project_id, user_id):
+        """删除项目容器；其中的会话保留并转为独立会话。"""
+        async with self.cursor(transaction=True) as cur:
+            await cur.execute(
+                "SELECT 1 FROM chat_projects WHERE project_id = %s AND user_id = %s FOR UPDATE",
+                (project_id, user_id),
+            )
+            if await cur.fetchone() is None:
+                return False
+            await cur.execute(
+                "UPDATE chat_threads SET project_id = NULL "
+                "WHERE project_id = %s AND user_id = %s",
+                (project_id, user_id),
+            )
+            await cur.execute(
+                "DELETE FROM chat_projects WHERE project_id = %s AND user_id = %s",
+                (project_id, user_id),
+            )
+            return cur.rowcount == 1
+
+    async def project_belongs_to(self, project_id, user_id):
+        async with self.cursor() as cur:
+            await cur.execute(
+                "SELECT 1 FROM chat_projects WHERE project_id = %s AND user_id = %s",
+                (project_id, user_id),
+            )
+            return await cur.fetchone() is not None
 
     async def get_session_updated_at(self, thread_id):
         async with self.cursor() as cur:
             await cur.execute(
-                "SELECT JSON_UNQUOTE(JSON_EXTRACT(checkpoint, '$.ts')) AS ts "
-                "FROM checkpoints WHERE thread_id = %s AND checkpoint_ns = '' "
-                "ORDER BY checkpoint_id DESC LIMIT 1", (thread_id,),
+                "SELECT COALESCE("
+                "(SELECT MAX(updated_at) FROM session_display_messages WHERE thread_id = %s), "
+                "(SELECT JSON_UNQUOTE(JSON_EXTRACT(checkpoint, '$.ts')) FROM checkpoints "
+                " WHERE thread_id = %s AND checkpoint_ns = '' ORDER BY checkpoint_id DESC LIMIT 1), "
+                "(SELECT created_at FROM chat_threads WHERE thread_id = %s)"
+                ") AS ts",
+                (thread_id, thread_id, thread_id),
             )
             row = await cur.fetchone()
         if row and row["ts"]:
+            if isinstance(row["ts"], datetime):
+                return row["ts"].replace(tzinfo=timezone.utc)
             return datetime.fromisoformat(row["ts"].replace("Z", "+00:00"))
         return datetime.now(timezone.utc)
 
@@ -350,11 +471,13 @@ class MySQLStorage:
         async with self.cursor() as cur:
             await cur.execute("DELETE FROM auth_sessions WHERE token_hash = %s", (token_hash,))
 
-    async def register_thread(self, thread_id, user_id):
+    async def register_thread(self, thread_id, user_id, project_id=None):
+        if project_id is not None and not await self.project_belongs_to(project_id, user_id):
+            raise ValueError("项目不存在或不属于当前用户")
         async with self.cursor() as cur:
             await cur.execute(
-                "INSERT INTO chat_threads (thread_id, user_id, created_at) "
-                "VALUES (%s, %s, UTC_TIMESTAMP(6))", (thread_id, user_id),
+                "INSERT INTO chat_threads (thread_id, user_id, project_id, created_at) "
+                "VALUES (%s, %s, %s, UTC_TIMESTAMP(6))", (thread_id, user_id, project_id),
             )
 
     async def thread_belongs_to(self, thread_id, user_id):

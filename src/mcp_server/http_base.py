@@ -1,5 +1,8 @@
 import logging
 import asyncio
+import random
+import time
+import uuid
 from contextlib import asynccontextmanager
 import httpx
 from fastmcp import FastMCP
@@ -10,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class AuthenticatedERPClient(httpx.AsyncClient):
-    """使用最小权限服务账号访问 ERP，并在 Token 失效后只重试一次。"""
+    """最小权限 ERP 客户端：认证、追踪传播、超时、指数退避和熔断。"""
 
     def __init__(self, *args, username: str, password: str, **kwargs):
         super().__init__(*args, **kwargs)
@@ -18,6 +21,9 @@ class AuthenticatedERPClient(httpx.AsyncClient):
         self._password = password
         self._token: str | None = None
         self._auth_lock = asyncio.Lock()
+        self._failure_lock = asyncio.Lock()
+        self._consecutive_failures = 0
+        self._circuit_open_until = 0.0
 
     async def _login(self, force: bool = False) -> None:
         if self._token and not force:
@@ -36,19 +42,59 @@ class AuthenticatedERPClient(httpx.AsyncClient):
             self._token = payload["data"]["token"]
 
     async def request(self, method, url, **kwargs):
-        if str(url) != "/auth/login":
+        method = str(method).upper()
+        is_login = str(url) == "/auth/login"
+        if not is_login:
+            if time.monotonic() < self._circuit_open_until:
+                raise RuntimeError("ERP 服务熔断保护中，请稍后重试")
             await self._login()
             headers = dict(kwargs.pop("headers", {}) or {})
             headers["Authorization"] = f"Bearer {self._token}"
+            trace_id = headers.setdefault("X-Trace-Id", "AGT-" + uuid.uuid4().hex[:20].upper())
+            headers.setdefault("traceparent", f"00-{uuid.uuid4().hex}-{uuid.uuid4().hex[:16]}-01")
             kwargs["headers"] = headers
-        response = await super().request(method, url, **kwargs)
-        if response.status_code == 401 and str(url) != "/auth/login":
-            await self._login(force=True)
-            headers = dict(kwargs.pop("headers", {}) or {})
-            headers["Authorization"] = f"Bearer {self._token}"
-            kwargs["headers"] = headers
-            response = await super().request(method, url, **kwargs)
-        return response
+        headers = kwargs.get("headers", {}) or {}
+        retryable = method in {"GET", "HEAD", "OPTIONS", "DELETE"} or (
+            method in {"POST", "PUT", "PATCH"} and bool(headers.get("Idempotency-Key")))
+        attempts = 3 if retryable and not is_login else 1
+        last_error = None
+        auth_refreshed = False
+        for attempt in range(attempts):
+            try:
+                response = await super().request(method, url, **kwargs)
+                if response.status_code == 401 and not is_login and not auth_refreshed:
+                    await self._login(force=True)
+                    kwargs["headers"]["Authorization"] = f"Bearer {self._token}"
+                    auth_refreshed = True
+                    response = await super().request(method, url, **kwargs)
+                if response.status_code >= 500 and retryable and attempt + 1 < attempts:
+                    await self._failure()
+                    await asyncio.sleep((0.2 * (2 ** attempt)) + random.uniform(0, 0.1))
+                    continue
+                if response.status_code < 500:
+                    await self._success()
+                else:
+                    await self._failure()
+                return response
+            except (httpx.TimeoutException, httpx.NetworkError) as exc:
+                last_error = exc
+                await self._failure()
+                if attempt + 1 >= attempts:
+                    raise RuntimeError(f"ERP 请求失败（已重试 {attempts - 1} 次）: {exc}") from exc
+                await asyncio.sleep((0.2 * (2 ** attempt)) + random.uniform(0, 0.1))
+        raise RuntimeError(f"ERP 请求失败: {last_error}")
+
+    async def _success(self):
+        async with self._failure_lock:
+            self._consecutive_failures = 0
+            self._circuit_open_until = 0.0
+
+    async def _failure(self):
+        async with self._failure_lock:
+            self._consecutive_failures += 1
+            if self._consecutive_failures >= 5:
+                self._circuit_open_until = time.monotonic() + 30
+                logger.warning("ERP 连续失败达到阈值，熔断 30 秒")
 
 # 关键点：lifespan 返回的字典会通过 ctx.request_context.lifespan_context 传递给每个工具函数，
 # 避免了全局变量或手动关闭的麻烦。
@@ -66,7 +112,7 @@ async def mcp_lifespan(server: FastMCP):
         raise RuntimeError("缺少 JAVA_API_USERNAME/JAVA_API_PASSWORD，无法以服务账号连接 ERP")
     http_client = AuthenticatedERPClient(
         base_url=JAVA_API_BASE_URL,
-        timeout=30.0,
+        timeout=httpx.Timeout(connect=3.0, read=30.0, write=10.0, pool=3.0),
         limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
         username=JAVA_API_USERNAME,
         password=JAVA_API_PASSWORD,

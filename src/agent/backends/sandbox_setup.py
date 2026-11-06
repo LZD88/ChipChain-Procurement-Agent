@@ -9,6 +9,7 @@ OpenSandbox 沙箱的初始化与文件播种模块。
 用户长期记忆（/memories/）由 CompositeBackend 路由到 StoreBackend 持久化。
 运行时的增量技能同步由 SkillsSyncMiddleware 负责。
 """
+import asyncio
 from datetime import timedelta
 import logging
 from pathlib import Path
@@ -19,6 +20,7 @@ from typing import List, Tuple
 from opensandbox import Sandbox
 
 from agent.backends.custom_opensandbox import OpenSandboxBackend
+from agent.backends.sandbox_healthcheck import check_sandbox
 from agent.config import (
     LOCAL_SKILLS_DIR, SANDBOX_SKILLS_ROOT,
 )
@@ -44,7 +46,9 @@ async def setup_sandbox(config, sandbox_id=None, image=None) -> OpenSandboxBacke
     if sandbox_id:
         logger.debug("连接已有沙箱：%s", sandbox_id)
         try:
-            sandbox = await Sandbox.connect(sandbox_id, connection_config=config)
+            sandbox = await asyncio.wait_for(
+                Sandbox.connect(sandbox_id, connection_config=config), timeout=15,
+            )
         except Exception:
             logger.warning("连接沙箱 %s 失败，将创建新沙箱", sandbox_id, exc_info=True)
             sandbox_id = None
@@ -66,11 +70,13 @@ async def setup_sandbox(config, sandbox_id=None, image=None) -> OpenSandboxBacke
     backend = OpenSandboxBackend(sandbox=sandbox)
 
     try:
+        if not await check_sandbox(backend):
+            raise RuntimeError("采购分析环境暂时无响应，请稍后重试。")
         # 准备目录、技能文件、Python venv 和依赖。
         await _ensure_dirs(backend)
         await _seed_files(backend)
         await _create_venv(backend)
-    except Exception:
+    except (Exception, asyncio.CancelledError):
         # 只清理本次新建失败的沙箱，重连沙箱可能有用户文件，保留供修复。
         if not sandbox_id:
             try:

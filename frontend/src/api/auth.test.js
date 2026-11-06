@@ -43,3 +43,23 @@ test('验证错误和非 JSON 服务器错误均返回可读消息', async t => 
   t.mock.method(globalThis, 'fetch', async () => new Response('Bad Gateway', { status: 502 }))
   await assert.rejects(apiFetch('/api/history'), /502/)
 })
+
+test('服务不可用时保留代理的错误原因和错误码，非 JSON 网关错误也提示重试', async t => {
+  t.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({ detail: {
+    code: 'backend_unavailable', message: '智能助手服务暂时不可用，可能正在启动，请稍后重试。',
+  } }), { status: 503 }))
+  await assert.rejects(apiFetch('/api/chat/stream'), error => {
+    assert.equal(error.status, 503)
+    assert.equal(error.code, 'backend_unavailable')
+    assert.match(error.message, /可能正在启动/)
+    return true
+  })
+  for (const status of [502, 503, 504]) {
+    t.mock.method(globalThis, 'fetch', async () => new Response('Gateway error', { status }))
+    await assert.rejects(apiFetch('/api/chat/stream'), error => {
+      assert.equal(error.status, status)
+      assert.match(error.message, /服务暂时不可用.*请稍后重试/)
+      return true
+    })
+  }
+})

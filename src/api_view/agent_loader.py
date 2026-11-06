@@ -6,10 +6,15 @@ Agent 加载器
 """
 
 from typing import Optional, List, Dict, Any
+import asyncio
+from contextlib import suppress
 import logging
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
+from deepagents import DeepAgentState
+from langchain_core.messages import AIMessage
+from langgraph.graph import StateGraph, START, END
 
 from agent.main_agent import create_main_agent, precompute_agent_context, PrecomputedContext
 from agent.backends import sandbox_manager
@@ -39,13 +44,14 @@ class AgentLoader:
     def __init__(self):
         self._initialized = False
         self._precomputed: PrecomputedContext | None = None
+        self._prewarm_task: asyncio.Task | None = None
 
     async def initialize(self):
         """
         启动时初始化：MySQL + 沙箱管理器 + 预计算 + 预热沙箱。
 
         预计算（MCP 工具和图表工具）执行一次，所有请求复用。
-        预热沙箱在启动阶段完成（~15s），首个用户连接时零等待。
+        沙箱预热作为后台任务启动；API 不等待预热完成即可开始监听。
         """
         if self._initialized and self._precomputed is not None:
             return
@@ -61,13 +67,24 @@ class AgentLoader:
             # 3. 预计算 MCP 工具 + 图表工具
             self._precomputed = await precompute_agent_context()
 
-            # 4. 预热第一个沙箱（阻塞 ~15s，首个用户无需等待创建）
-            await sandbox_manager.pre_warm()
-
             self._initialized = True
+            # 4. 沙箱预热放到后台。OpenSandbox 变慢或暂时异常时，API 仍应先开始
+            # 监听并返回健康状态，不能让整个聊天页面卡在连接阶段。
+            if self._prewarm_task is None or self._prewarm_task.done():
+                self._prewarm_task = asyncio.create_task(
+                    self._prewarm_safely(), name="sandbox-prewarm",
+                )
         except Exception:
             await mysql_storage.close()
             raise
+
+    async def _prewarm_safely(self) -> None:
+        try:
+            await sandbox_manager.pre_warm()
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("后台预热沙箱失败；API 保持可用，首次请求时将按需恢复")
 
     async def get_agent_for_user(self, user_id: str):
         """
@@ -89,9 +106,26 @@ class AgentLoader:
             sandbox_backend=sandbox_backend,
             precomputed=self._precomputed,
         )
+
+    def get_direct_response_agent(self, response: str):
+        """护栏已批准的固定回复复用会话 checkpoint，无需创建沙箱或调用模型。"""
+        async def reply(_state):
+            return {"messages": [AIMessage(content=response)]}
+
+        graph = StateGraph(DeepAgentState)
+        graph.add_node("guardrail_reply", reply)
+        graph.add_edge(START, "guardrail_reply")
+        graph.add_edge("guardrail_reply", END)
+        return graph.compile(checkpointer=mysql_storage.checkpointer)
+
     async def shutdown(self) -> None:
         """应用关闭时清理所有沙箱和 MySQL 连接池。"""
         try:
+            if self._prewarm_task and not self._prewarm_task.done():
+                self._prewarm_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await self._prewarm_task
+            self._prewarm_task = None
             await sandbox_manager.shutdown()
         finally:
             await mysql_storage.close()

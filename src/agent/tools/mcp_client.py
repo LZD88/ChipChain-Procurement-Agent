@@ -30,7 +30,7 @@ MCP_SERVER_CONFIG = {
 }
 
 # 工具分组规则（前缀匹配）
-ANALYST_TOOL_PREFIXES = ("supplier_", "part_", "inventory_")
+ANALYST_TOOL_PREFIXES = ("supplier_", "part_", "inventory_", "procurement_")
 ORDER_TOOL_PREFIXES = ("order_",)
 CHART_TOOL_PREFIXES = ("generate_",)  # 可视化及表格工具
 
@@ -52,9 +52,7 @@ async def load_mcp_tools(
     """
     if server_config is None:
         server_config = MCP_SERVER_CONFIG
-    if not server_config.get("analysis", {}).get("url"):
-        raise ValueError("请在 .env 中配置 ANALYSIS_MCP_URL（可视化 MCP 服务地址）")
-
+    # 保留完整配置交给适配器；业务 MCP 是必需项，可视化 MCP 是增强项。
     mcp_client = MultiServerMCPClient(server_config)
 
     # 从 MCP Server 获取业务工具
@@ -62,8 +60,10 @@ async def load_mcp_tools(
     logger.debug("MCP chip-supply-api 加载完成：%d 个工具", len(chip_supply_tools))
 
     # 从魔塔社区 MCP Server 获取图表工具
-    analysis_tools = await mcp_client.get_tools(server_name="analysis")
-    logger.debug("MCP analysis 加载完成：%d 个工具", len(analysis_tools))
+    analysis_tools = []
+    if server_config.get("analysis", {}).get("url"):
+        analysis_tools = await mcp_client.get_tools(server_name="analysis")
+        logger.debug("MCP analysis 加载完成：%d 个工具", len(analysis_tools))
 
     # 按前缀分组：业务工具
     analyst_tools = [

@@ -12,6 +12,8 @@ const md = new MarkdownIt({
   }
 })
 const escape = md.utils.escapeHtml
+md.renderer.rules.table_open = () => '<div class="markdown-table-wrap" tabindex="0" role="region" aria-label="表格，可横向滚动"><table>'
+md.renderer.rules.table_close = () => '</table></div>\n'
 md.renderer.rules.image = (tokens, index, options, env) => {
   if (env.showImages === false) return ''
   const token = tokens[index]

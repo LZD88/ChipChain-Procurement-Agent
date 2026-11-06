@@ -5,10 +5,12 @@
 """
 
 import json
+import asyncio
 import uuid
 import re
 import os
 import tempfile
+from contextlib import aclosing
 from datetime import datetime
 from typing import AsyncIterator
 
@@ -27,10 +29,26 @@ from api_view.agent_loader import agent_loader
 from api_view.auth import require_same_origin_request, require_thread, require_user
 from agent.mysql_storage import mysql_storage
 from agent.input_guard import InputSafetyError, get_input_guard
+from api_view.observability import StreamObservation
 
 
 # 创建路由
 router = APIRouter(dependencies=[Depends(require_same_origin_request)])
+
+AGENT_PREPARATION_TIMEOUT_SECONDS = 300
+AGENT_PREPARATION_PROGRESS_SECONDS = 10
+
+
+async def with_idle_timeout(iterator, seconds: int = 90):
+    """如果 Agent 长时间没有任何事件，结束流并向用户返回错误。"""
+    async_iterator = iterator.__aiter__()
+    while True:
+        try:
+            yield await asyncio.wait_for(async_iterator.__anext__(), timeout=seconds)
+        except StopAsyncIteration:
+            return
+        except TimeoutError as exc:
+            raise RuntimeError("智能助手响应超时，请重试。会话和问题已为您保留。") from exc
 
 # 调试日志文件路径（在项目根目录的 temp 文件夹下）
 DEBUG_LOG_DIR = os.path.join(tempfile.gettempdir(), "deepagent_debug")
@@ -243,6 +261,36 @@ class ResumeRequest(BaseModel):
 # 流式对话核心逻辑
 # ============================================================
 
+async def prepare_agent(user_id: str, thread_id: str):
+    """初始化有心跳和总时限；取消连接时及时回收初始化任务。"""
+    yield create_sse_message({
+        "type": "progress", "stage": "preparing",
+        "message": "正在连接采购分析环境…", "thread_id": thread_id,
+    }), None
+    started = asyncio.get_running_loop().time()
+    preparation = asyncio.create_task(agent_loader.get_agent_for_user(user_id))
+    try:
+        async with asyncio.timeout(AGENT_PREPARATION_TIMEOUT_SECONDS):
+            while not preparation.done():
+                completed, _ = await asyncio.wait(
+                    {preparation}, timeout=AGENT_PREPARATION_PROGRESS_SECONDS,
+                )
+                if not completed:
+                    elapsed = int(asyncio.get_running_loop().time() - started)
+                    yield create_sse_message({
+                        "type": "progress", "stage": "preparing",
+                        "message": f"正在连接并检查采购分析环境，已等待 {elapsed} 秒…",
+                        "thread_id": thread_id,
+                    }), None
+            yield None, preparation.result()
+    except TimeoutError as exc:
+        raise RuntimeError("分析环境连接超时，请稍后重试。会话和问题已为您保留。") from exc
+    finally:
+        if not preparation.done():
+            preparation.cancel()
+        await asyncio.gather(preparation, return_exceptions=True)
+
+
 async def stream_chat_response(
     message: str = None,
     thread_id: str = None,
@@ -263,6 +311,8 @@ async def stream_chat_response(
 
     同时累积完整的展示消息列表（包含子代理消息），在流结束后存入 MySQL。
     """
+    endpoint = "resume" if resume_data is not None else "chat"
+    observation = StreamObservation(endpoint).start()
     context = {"user_id": user_id, "username": user_id}
     if direct_response is not None:
         context["guardrail_response"] = direct_response
@@ -283,15 +333,16 @@ async def stream_chat_response(
         display_messages = existing
         current_input = Command(resume=resume_data)
     else:
-        # 初始模式：新建展示消息，用普通消息作为 input
+        # 包含已有历史；新会话由端点预存的问题只保留一份。
         current_input = {"messages": [{"role": "user", "content": message}]}
-        display_messages = [
-            {
+        display_messages = list(await agent_loader.get_display_messages(thread_id) or [])
+        if not (display_messages and display_messages[-1].get("role") == "user"
+                and display_messages[-1].get("content") == message):
+            display_messages.append({
                 "id": f"user-{uuid.uuid4()}",
                 "role": "user",
-                "content": message
-            }
-        ]
+                "content": message,
+            })
 
     # 创建调试日志文件
     debug_log = get_debug_log_path(thread_id)
@@ -307,19 +358,41 @@ async def stream_chat_response(
             "is_resume": resume_data is not None,
         })
 
-        # 初始化也可能失败；放在异常处理内，让前端收到 SSE error 事件。
-        agent_graph = await agent_loader.get_agent_for_user(user_id)
+        # 在耗时的沙箱/模型初始化之前把会话 ID 交给前端，左侧列表可立即同步。
+        if resume_data is None:
+            yield create_sse_message({
+                "type": "session",
+                "thread_id": thread_id,
+            })
+
+        if direct_response is not None and resume_data is None:
+            agent_graph = agent_loader.get_direct_response_agent(direct_response)
+        else:
+            async with aclosing(prepare_agent(user_id, thread_id)) as preparation_stream:
+                async for progress, prepared_graph in preparation_stream:
+                    if progress is not None:
+                        yield progress
+                    else:
+                        agent_graph = prepared_graph
+
+        if direct_response is None:
+            yield create_sse_message({
+                "type": "progress",
+                "stage": "reasoning",
+                "message": "正在拆解需求，核验库存、预算、交期与供应商…",
+                "thread_id": thread_id,
+            })
 
         # 流式调用 agent.astream()
         # stream_mode=["messages", "values"] — messages 流显示 + values 流检测中断
-        async for chunk in agent_graph.astream(
+        async for chunk in with_idle_timeout(agent_graph.astream(
             input=current_input,
             config=config,
             context=context,
             stream_mode=["messages", "values"],
             subgraphs=True, # 启用子代理流式输出
             version="v2",
-        ):
+        )):
             chunk_type = chunk.get("type")
 
             # ---- 值流（中断检测，必须在 messages 处理之前）----
@@ -393,6 +466,7 @@ async def stream_chat_response(
                     "content": collected_content,
                     "interrupted": True,
                 })
+                observation.finish("interrupted")
                 return  # ← 结束本次流，等待前端 POST /resume
 
             # ---- 消息流（token / tool_call / tool_result）----
@@ -443,6 +517,7 @@ async def stream_chat_response(
                             "tool_name": tool_chunk['name'],
                             "source": source
                         })
+                        observation.tool(tool_chunk['name'], "started")
 
                         # 添加到展示消息
                         display_messages.append({
@@ -541,6 +616,7 @@ async def stream_chat_response(
                     "tool_call_id": tool_id,
                     "source": source
                 })
+                observation.tool(tool_name, "success")
 
                 # 确保展示消息中的工具标记为 done（兜底）
                 for dm in reversed(display_messages):
@@ -552,6 +628,7 @@ async def stream_chat_response(
             # 注意：ToolMessage（type == "tool"）的内容是工具执行结果，已在上面
             # tool_result 事件中处理。这里必须跳过，否则工具结果会被当作 AI 文本重复输出。
             content_text = extract_content_from_token(token)
+            observation.token(token, content_text or "")
             has_tool_calls = hasattr(token, 'tool_call_chunks') and token.tool_call_chunks
             is_tool_result = message_type in {"tool", "ToolMessageChunk"}
 
@@ -591,15 +668,8 @@ async def stream_chat_response(
             if not (dm["role"] == "assistant" and not dm.get("content"))
         ]
 
-        # 保存完整展示消息到 MySQL（包含子代理消息）
-        # 多轮对话：追加到已有消息，而非覆盖（每轮调用 save 时 display_messages 仅含当前轮）
-        if resume_data is None:
-            # 初始对话：追加到已有历史
-            existing = await agent_loader.get_display_messages(thread_id) or []
-            all_messages = existing + display_messages
-        else:
-            # resume 模式：display_messages 已包含历史（load 时获取），直接保存
-            all_messages = display_messages
+        # 保存完整历史（包含本轮以及已有的用户、助手和子代理消息）。
+        all_messages = display_messages
         await agent_loader.save_display_messages(thread_id, all_messages)
         write_debug_log(debug_log, "SAVE_DISPLAY", {
             "thread_id": thread_id,
@@ -617,13 +687,21 @@ async def stream_chat_response(
             "thread_id": thread_id,
             "content": collected_content
         })
+        observation.finish("success")
 
     except Exception as e:
+        if resume_data is None and display_messages:
+            # 即使 Agent 初始化失败也保留首条问题，让新会话立即出现在项目列表。
+            await agent_loader.save_display_messages(thread_id, display_messages)
         write_debug_log(debug_log, "STREAM_ERROR", {"error": str(e)})
         yield create_sse_message({
             "type": "error",
-            "message": str(e)
+            "message": str(e) or "请求处理失败，请稍后重试。"
         })
+        observation.finish("failure")
+    finally:
+        # 客户端中途断开时异步生成器会直接关闭，也要归还活跃请求计数。
+        observation.finish("cancelled")
 
 
 # ============================================================
@@ -651,7 +729,15 @@ async def chat_stream(request: ChatRequest, user_id: str = Depends(require_user)
 
     if not request.thread_id:
         thread_id = str(uuid.uuid4())
-        await mysql_storage.register_thread(thread_id, user_id)
+        try:
+            await mysql_storage.register_thread(thread_id, user_id, request.project_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from None
+        await agent_loader.save_display_messages(thread_id, [{
+            "id": f"user-{uuid.uuid4()}",
+            "role": "user",
+            "content": request.message,
+        }])
 
     return StreamingResponse(
         stream_chat_response(

@@ -2,8 +2,12 @@
 import { getCallId } from '../utils/toolCalls.js'
 import { apiFetch } from './http.js'
 
-export function streamChat(message, threadId = null, callbacks = {}, signal = null) {
-  return requestStream('/api/chat/stream', { message, thread_id: threadId }, threadId, callbacks, signal)
+const STREAM_IDLE_TIMEOUT_MS = 100_000
+
+export function streamChat(message, threadId = null, callbacks = {}, signal = null, projectId = null) {
+  return requestStream('/api/chat/stream', {
+    message, thread_id: threadId, ...(threadId ? {} : { project_id: projectId })
+  }, threadId, callbacks, signal)
 }
 
 export function resumeChat(threadId, resumeData, callbacks = {}, signal = null) {
@@ -42,6 +46,12 @@ async function requestStream(url, body, threadId, callbacks, signal) {
       catch { return null } // 仅跳过无效 JSON；服务端 error 事件必须交给调用方。
       if (data.thread_id) state.thread_id = data.thread_id
       switch (data.type) {
+        case 'session':
+          callbacks.onSession?.({ thread_id: state.thread_id })
+          break
+        case 'progress':
+          callbacks.onProgress?.({ stage: data.stage, message: data.message || '正在处理…' })
+          break
         case 'token':
           state.content += data.content || ''
           callbacks.onToken?.(data.content || '', data.source)
@@ -92,7 +102,7 @@ async function requestStream(url, body, threadId, callbacks, signal) {
     }
 
     while (true) {
-      const { done, value } = await reader.read()
+      const { done, value } = await readWithIdleTimeout(reader, STREAM_IDLE_TIMEOUT_MS)
       buffer += decoder.decode(value, { stream: !done })
       const lines = buffer.split('\n')
       buffer = lines.pop()
@@ -116,5 +126,19 @@ async function requestStream(url, body, threadId, callbacks, signal) {
       await reader.cancel().catch(() => {})
       reader.releaseLock()
     }
+  }
+}
+
+async function readWithIdleTimeout(reader, timeoutMs) {
+  let timer
+  try {
+    return await Promise.race([
+      reader.read(),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error('长时间未收到处理进度，请重试；已完成的结果仍会保存在会话历史中。')), timeoutMs)
+      })
+    ])
+  } finally {
+    clearTimeout(timer)
   }
 }

@@ -167,7 +167,7 @@ async def create_main_agent(
     procurement_analyst: SubAgent = {
         "name": "procurement-analyst",
         "description": (
-            "采购分析专家。负责供应商比价、物料行情分析、采购策略建议、 "
+            "采购分析专家。负责基于确定性规则的供应商比价、物料行情分析、采购策略建议、 "
             "市场调研、成本评估等需要多步数据收集和深度分析的任务。 "
             '当用户需求涉及"分析"、"对比"、"报告"、"建议"、"评估"、 '
             '"行情"、"比价"、"筛选"等关键词时，应委派给此子 Agent。'
@@ -180,6 +180,7 @@ async def create_main_agent(
             mcp_tools["part_by_supplier"],
             mcp_tools["order_search_details"],
             mcp_tools["inventory_warning"],
+            mcp_tools["procurement_compare"],
             precomputed.chart_tool,
             web_search,
         ],
@@ -189,13 +190,14 @@ async def create_main_agent(
     procurement_order: SubAgent = {
         "name": "procurement-order",
         "description": (
-            "采购订单管理专家。负责创建新采购单、修改已有采购单信息（交货日期、 "
-            "供应商变更、金额调整、状态更新等）以及与采购订单相关的查询操作。 "
+            "采购订单管理专家。负责基于确定性比价结果创建待审核采购单、修改待审核订单的 "
+            "交货日期/备注/物料明细，以及与采购订单相关的查询操作。订单状态流转由采购人员完成。 "
             '当用户需求涉及"下单"、"创建订单"、"修改采购单"、"更新订单"、 '
-            '"取消订单"、"订单状态"、"交期变更"等关键词时，应委派给此子 Agent。'
+            '"订单状态查询"、"交期变更"等关键词时，应委派给此子 Agent。'
         ),
         "system_prompt": PROCUREMENT_ORDER_PROMPT,
         "tools": [
+            mcp_tools["procurement_compare"],
             mcp_tools["order_create"],
             mcp_tools["order_update"],
             mcp_tools["order_search_details"],
@@ -227,6 +229,7 @@ async def create_main_agent(
             mcp_tools["supplier_get"],
             mcp_tools["supplier_query"],
             mcp_tools["order_search_details"],
+            mcp_tools["procurement_compare"],
             mcp_tools["order_create"],
             request_order_info,
         ],

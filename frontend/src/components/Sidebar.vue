@@ -1,451 +1,513 @@
 <template>
   <aside class="sidebar">
-    <!-- 侧边栏头部 -->
     <div class="sidebar-header">
-      <div class="logo">
-        <span class="logo-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <div class="logo-copy">
-          <strong>棱镜工作台</strong>
-          <span>ERP INTELLIGENCE</span>
-        </div>
+      <div class="brand-row">
+        <div class="logo-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div class="brand-copy"><strong>棱镜工作台</strong><span>智能供应链决策中心</span></div>
+        <button class="sidebar-toggle" type="button" :aria-label="mobile ? '关闭会话侧栏' : '收起会话侧栏'" :title="mobile ? '关闭会话侧栏' : '收起会话侧栏'" aria-controls="session-sidebar" aria-expanded="true" @click="$emit('toggle-sidebar')"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16M6 8h.01M6 11h.01"/></svg></button>
       </div>
-      <button class="new-chat-btn" @click="$emit('new-chat')">
-        <span class="icon">+</span>
-        新建对话
+
+      <button class="new-chat-btn" type="button" @click="$emit('new-chat', null)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        新建会话
+        <span class="shortcut">Ctrl N</span>
       </button>
+
+      <label class="search-box">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg>
+        <input v-model.trim="searchKeyword" type="search" placeholder="搜索项目或会话" aria-label="搜索项目或会话" />
+      </label>
     </div>
 
-    <!-- 搜索框 -->
-    <div class="search-box">
-      <input
-        type="text"
-        v-model="searchKeyword"
-        placeholder="搜索会话..."
-        class="search-input"
-      />
-    </div>
+    <div class="navigation-scroll">
+      <section class="nav-section">
+        <div class="section-heading">
+          <span>项目</span>
+          <button type="button" title="创建项目" aria-label="创建项目" @click="openProjectDialog">＋</button>
+        </div>
 
-    <!-- 会话列表 -->
-    <div class="session-list">
-      <div class="session-list-header">
-        <span>历史记录</span>
-      </div>
+        <div v-if="visibleProjects.length" class="project-list">
+          <div v-for="project in visibleProjects" :key="project.project_id" class="project-block">
+            <div class="project-row" :class="{ active: currentProjectId === project.project_id }">
+              <button
+                class="project-expand"
+                type="button"
+                :aria-expanded="isExpanded(project.project_id)"
+                :aria-label="isExpanded(project.project_id) ? '收起项目会话' : '展开项目会话'"
+                @click="toggleProject(project.project_id)"
+              >
+                <svg class="chevron" :class="{ open: isExpanded(project.project_id) }" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+              </button>
+              <button class="project-select" type="button" @click="openProjectWorkspace(project)">
+                <svg class="folder" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5h7l2-2h9v13H3z"/></svg>
+                <span :title="project.name">{{ project.name }}</span>
+                <em v-if="projectSessionCount(project.project_id)">{{ projectSessionCount(project.project_id) }}</em>
+              </button>
+              <button
+                class="project-more project-menu-trigger"
+                type="button"
+                aria-label="打开项目菜单"
+                title="项目详情"
+                @click.stop="openProjectMenu(project, $event)"
+              >•••</button>
+              <button
+                class="project-compose"
+                type="button"
+                :aria-label="`在“${project.name}”中新建会话`"
+                :title="`在“${project.name}”中新建会话`"
+                @click.stop="startProjectChat(project)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-7M16 3h5v5M11 13 21 3"/></svg>
+              </button>
+            </div>
 
-      <div class="session-items">
-        <div
-          v-for="session in filteredSessions"
-          :key="session.thread_id"
-          class="session-item"
-          :class="{ active: session.thread_id === currentThreadId }"
-          @click="$emit('select-session', session.thread_id)"
-        >
-          <div class="session-info">
-            <span class="session-title" :title="session.title">{{ session.title }}</span>
-            <span class="session-time">{{ formatTime(session.updated_at) }}</span>
+            <div v-if="isExpanded(project.project_id)" class="project-sessions">
+              <SessionRow
+                v-for="session in sessionsForProject(project)"
+                :key="session.thread_id"
+                :session="session"
+                :active="session.thread_id === currentThreadId"
+                :menu-open="openSessionMenuId === session.thread_id"
+                @toggle-menu="toggleSessionMenu(session.thread_id)"
+                @close-menu="closeSessionMenu"
+                @select="$emit('select-session', session.thread_id)"
+                @pin="togglePin"
+                @rename="openRenameDialog"
+                @delete="openDeleteSessionDialog"
+              />
+              <p v-if="!sessionsForProject(project).length" class="project-empty">暂无会话，点击右侧图标开始</p>
+            </div>
           </div>
-          <button
-            class="delete-btn"
-            @click.stop="handleDelete(session.thread_id)"
-            title="删除会话"
-          >
-            ×
-          </button>
         </div>
+        <button v-else-if="!searchKeyword" class="create-first-project" type="button" @click="openProjectDialog">
+          <span>＋</span><strong>创建第一个项目</strong><small>按业务主题归纳相关会话</small>
+        </button>
+        <p v-else class="no-result">没有匹配的项目</p>
+      </section>
 
-        <!-- 空状态 -->
-        <div v-if="sessions.length === 0" class="empty-state">
-          <p>暂无会话记录</p>
-          <p class="hint">开始一个新对话吧</p>
-        </div>
-      </div>
+      <section class="nav-section recent-section">
+        <div class="section-heading"><span>独立会话</span><em>{{ standaloneSessions.length }}</em></div>
+        <SessionRow
+          v-for="session in standaloneSessions"
+          :key="session.thread_id"
+          :session="session"
+          :active="session.thread_id === currentThreadId"
+          :menu-open="openSessionMenuId === session.thread_id"
+          @toggle-menu="toggleSessionMenu(session.thread_id)"
+          @close-menu="closeSessionMenu"
+          @select="$emit('select-session', session.thread_id)"
+          @pin="togglePin"
+          @rename="openRenameDialog"
+          @delete="openDeleteSessionDialog"
+        />
+        <p v-if="!standaloneSessions.length && currentThreadId !== null" class="no-result">暂无独立会话</p>
+      </section>
     </div>
 
-    <!-- 侧边栏底部 -->
     <div class="sidebar-footer">
       <div class="account-avatar" aria-hidden="true">{{ username.slice(0, 1).toUpperCase() }}</div>
-      <div class="account-copy"><strong>{{ username }}</strong><span>我的采购工作台</span></div>
-      <button class="logout-btn" type="button" :disabled="loggingOut" @click="$emit('logout')">
-        {{ loggingOut ? '退出中…' : '退出' }}
+      <div class="account-copy"><strong>{{ username }}</strong><span>采购决策工作区</span></div>
+      <button class="logout-btn" type="button" :disabled="loggingOut" @click="$emit('logout')" :title="loggingOut ? '正在退出' : '退出登录'">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5v14h5M14 8l4 4-4 4m4-4H9"/></svg>
       </button>
     </div>
+
+    <div v-if="dialog.type" class="dialog-backdrop" @click.self="closeDialog">
+      <form class="dialog-card" @submit.prevent="submitDialog">
+        <div class="dialog-icon" aria-hidden="true">{{ dialog.type === 'rename' ? '✎' : '⌂' }}</div>
+        <div class="dialog-copy">
+          <h3>{{ dialog.type === 'project' ? '创建项目' : dialog.type === 'edit-project' ? '编辑项目' : '修改会话名称' }}</h3>
+          <p>{{ dialog.type === 'project' ? '项目可以集中管理同一采购主题下的多个会话。' : dialog.type === 'edit-project' ? '修改项目名称后，项目内已有会话不会受到影响。' : '使用简短、明确的名称，方便后续快速定位。' }}</p>
+        </div>
+        <label>
+          <span>{{ dialog.type === 'rename' ? '会话名称' : '项目名称' }}</span>
+          <input ref="dialogInput" v-model="dialog.value" :maxlength="dialog.type === 'rename' ? 80 : 40" required />
+        </label>
+        <div class="dialog-actions">
+          <button type="button" @click="closeDialog">取消</button>
+          <button class="primary" type="submit" :disabled="!dialog.value.trim()">{{ dialog.type === 'project' ? '创建并开始会话' : '保存名称' }}</button>
+        </div>
+      </form>
+    </div>
+
   </aside>
+
+  <ConfirmDialog
+    v-if="sessionDeleteTarget"
+    title="删除会话？"
+    :description="`将永久删除会话“${sessionDeleteTarget.title}”及其历史消息，此操作无法撤销。`"
+    @cancel="sessionDeleteTarget = null"
+    @confirm="confirmDeleteSession"
+  />
+  <ConfirmDialog
+    v-if="deleteTarget"
+    title="删除项目？"
+    :description="`删除项目“${deleteTarget.name}”后，项目内的 ${projectSessionCount(deleteTarget.project_id)} 个会话会移至“独立会话”，历史消息和采购记录会保留。`"
+    @cancel="deleteTarget = null"
+    @confirm="confirmDeleteProject"
+  />
+
+  <Teleport to="body">
+    <div
+      v-if="projectMenu.project"
+      class="project-popover"
+      :style="{ top: `${projectMenu.top}px`, left: `${projectMenu.left}px` }"
+    >
+      <div class="popover-heading">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5h7l2-2h9v13H3z"/></svg>
+        <strong>{{ projectMenu.project.name }}</strong>
+        <span>项目</span>
+      </div>
+      <button type="button" @click="openProjectWorkspace(projectMenu.project)">
+        <span class="popover-row-icon">◯</span>
+        <span><strong>{{ projectSessionCount(projectMenu.project.project_id) }} 个会话</strong><small>查看项目内的全部采购对话</small></span>
+      </button>
+      <button type="button" @click="startProjectChat(projectMenu.project)">
+        <span class="popover-row-icon">＋</span>
+        <span><strong>新建项目会话</strong><small>在当前项目上下文中开始</small></span>
+      </button>
+      <div class="popover-divider"></div>
+      <button type="button" @click="openEditProjectDialog(projectMenu.project)">
+        <span class="popover-row-icon">⚙</span>
+        <span><strong>编辑项目</strong><small>修改项目名称</small></span>
+      </button>
+      <button class="popover-danger" type="button" @click="openDeleteProjectDialog(projectMenu.project)">
+        <span class="popover-row-icon">⌫</span>
+        <span><strong>删除项目</strong><small>会话保留并移至独立会话</small></span>
+      </button>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import SessionRow from './SessionRow.vue'
+import ConfirmDialog from './ConfirmDialog.vue'
 
-// Props 定义
 const props = defineProps({
   username: { type: String, required: true },
+  mobile: Boolean,
   loggingOut: Boolean,
-  sessions: {
-    type: Array,
-    default: () => []
-  },
-  currentThreadId: {
-    type: String,
-    default: null
-  }
+  sessions: { type: Array, default: () => [] },
+  projects: { type: Array, default: () => [] },
+  currentThreadId: { type: String, default: null },
+  pendingProjectId: { type: String, default: null },
+  currentProjectId: { type: String, default: null }
 })
 
-// Emits 定义
-const emit = defineEmits(['select-session', 'new-chat', 'delete-session', 'logout'])
-
-// 搜索关键词
+const emit = defineEmits(['select-session', 'new-chat', 'open-project', 'delete-session', 'update-session', 'create-project', 'update-project', 'delete-project', 'logout', 'toggle-sidebar'])
 const searchKeyword = ref('')
+const expandedProjects = ref(new Set())
+const dialogInput = ref(null)
+const dialog = reactive({ type: null, value: '', session: null, project: null })
+const projectMenu = reactive({ project: null, top: 0, left: 0 })
+const openSessionMenuId = ref(null)
+const deleteTarget = ref(null)
+const sessionDeleteTarget = ref(null)
 
-// 过滤后的会话列表
-const filteredSessions = computed(() => {
-  if (!searchKeyword.value) {
-    return props.sessions
-  }
-  return props.sessions.filter(session =>
-    session.title.toLowerCase().includes(searchKeyword.value.toLowerCase())
+watch([() => props.currentThreadId, () => props.currentProjectId], () => {
+  closeSessionMenu()
+  closeProjectMenu()
+})
+
+watch(() => props.projects, projects => {
+  const next = new Set(expandedProjects.value)
+  projects.forEach(project => next.add(project.project_id))
+  expandedProjects.value = next
+}, { immediate: true })
+
+watch(() => props.pendingProjectId, projectId => {
+  if (!projectId) return
+  const next = new Set(expandedProjects.value)
+  next.add(projectId)
+  expandedProjects.value = next
+})
+
+const normalizedSearch = computed(() => searchKeyword.value.toLocaleLowerCase())
+const visibleProjects = computed(() => {
+  if (!normalizedSearch.value) return props.projects
+  return props.projects.filter(project =>
+    project.name.toLocaleLowerCase().includes(normalizedSearch.value) ||
+    props.sessions.some(session => session.project_id === project.project_id && matchesSearch(session))
   )
 })
+const standaloneSessions = computed(() => props.sessions.filter(session => !session.project_id && matchesSearch(session)))
 
-/**
- * 格式化时间
- */
-function formatTime(timestamp) {
-  if (!timestamp) return ''
-
-  const date = new Date(timestamp)
-  const now = new Date()
-  const diff = now - date
-
-  // 一天内显示相对时间
-  if (diff < 24 * 60 * 60 * 1000) {
-    const hours = Math.floor(diff / (60 * 60 * 1000))
-    if (hours < 1) {
-      const minutes = Math.floor(diff / (60 * 1000))
-      return minutes < 1 ? '刚刚' : `${minutes} 分钟前`
-    }
-    return `${hours} 小时前`
-  }
-
-  // 超过一天显示日期
-  return `${date.getMonth() + 1}/${date.getDate()}`
+function matchesSearch(session) {
+  return !normalizedSearch.value || session.title.toLocaleLowerCase().includes(normalizedSearch.value)
 }
 
-/**
- * 处理删除会话
- */
-function handleDelete(threadId) {
-  if (confirm('确定要删除这个会话吗？')) {
-    emit('delete-session', threadId)
+function sessionsForProject(project) {
+  const projectNameMatches = normalizedSearch.value && project.name.toLocaleLowerCase().includes(normalizedSearch.value)
+  return props.sessions.filter(session =>
+    session.project_id === project.project_id && (projectNameMatches || matchesSearch(session))
+  )
+}
+
+function projectSessionCount(projectId) {
+  return props.sessions.filter(session => session.project_id === projectId).length
+}
+
+function isExpanded(projectId) {
+  return normalizedSearch.value || expandedProjects.value.has(projectId)
+}
+
+function toggleProject(projectId) {
+  const next = new Set(expandedProjects.value)
+  next.has(projectId) ? next.delete(projectId) : next.add(projectId)
+  expandedProjects.value = next
+}
+
+function startProjectChat(project) {
+  const next = new Set(expandedProjects.value)
+  next.add(project.project_id)
+  expandedProjects.value = next
+  closeProjectMenu()
+  emit('new-chat', project.project_id)
+}
+
+function openProjectWorkspace(project) {
+  const next = new Set(expandedProjects.value)
+  next.add(project.project_id)
+  expandedProjects.value = next
+  closeProjectMenu()
+  emit('open-project', project.project_id)
+}
+
+function openProjectMenu(project, event) {
+  closeSessionMenu()
+  if (projectMenu.project?.project_id === project.project_id) {
+    closeProjectMenu()
+    return
+  }
+  const row = event.currentTarget.closest('.project-row')
+  const rect = row.getBoundingClientRect()
+  projectMenu.project = project
+  projectMenu.top = Math.max(12, Math.min(rect.top, window.innerHeight - 254))
+  projectMenu.left = Math.max(12, Math.min(rect.right + 8, window.innerWidth - 310))
+}
+
+function closeProjectMenu() {
+  projectMenu.project = null
+}
+
+function toggleSessionMenu(threadId) {
+  closeProjectMenu()
+  openSessionMenuId.value = openSessionMenuId.value === threadId ? null : threadId
+}
+
+function closeSessionMenu() {
+  openSessionMenuId.value = null
+}
+
+function togglePin(session) {
+  emit('update-session', { threadId: session.thread_id, changes: { pinned: !session.pinned } })
+}
+
+function openDeleteSessionDialog(session) {
+  closeSessionMenu()
+  closeProjectMenu()
+  sessionDeleteTarget.value = session
+}
+
+function confirmDeleteSession() {
+  if (!sessionDeleteTarget.value) return
+  const threadId = sessionDeleteTarget.value.thread_id
+  sessionDeleteTarget.value = null
+  emit('delete-session', threadId)
+}
+
+function openProjectDialog() {
+  dialog.type = 'project'
+  dialog.value = ''
+  dialog.session = null
+  dialog.project = null
+  focusDialog()
+}
+
+function openRenameDialog(session) {
+  dialog.type = 'rename'
+  dialog.value = session.title
+  dialog.session = session
+  dialog.project = null
+  focusDialog()
+}
+
+function openEditProjectDialog(project) {
+  closeProjectMenu()
+  dialog.type = 'edit-project'
+  dialog.value = project.name
+  dialog.session = null
+  dialog.project = project
+  focusDialog()
+}
+
+function openDeleteProjectDialog(project) {
+  closeProjectMenu()
+  deleteTarget.value = project
+}
+
+function confirmDeleteProject() {
+  if (!deleteTarget.value) return
+  emit('delete-project', deleteTarget.value.project_id)
+  deleteTarget.value = null
+}
+
+function focusDialog() {
+  nextTick(() => {
+    dialogInput.value?.focus()
+    dialogInput.value?.select()
+  })
+}
+
+function closeDialog() {
+  dialog.type = null
+  dialog.value = ''
+  dialog.session = null
+  dialog.project = null
+}
+
+function submitDialog() {
+  const value = dialog.value.trim()
+  if (!value) return
+  if (dialog.type === 'project') emit('create-project', value)
+  else if (dialog.type === 'edit-project' && dialog.project) emit('update-project', { projectId: dialog.project.project_id, changes: { name: value } })
+  else if (dialog.session) emit('update-session', { threadId: dialog.session.thread_id, changes: { title: value } })
+  closeDialog()
+}
+
+function handleKeyboard(event) {
+  if (event.key === 'Escape' && openSessionMenuId.value) {
+    closeSessionMenu()
+    return
+  }
+  if (event.key === 'Escape' && deleteTarget.value) {
+    deleteTarget.value = null
+    return
+  }
+  if (event.key === 'Escape' && projectMenu.project) {
+    closeProjectMenu()
+    return
+  }
+  if (event.key === 'Escape' && dialog.type) {
+    closeDialog()
+    return
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === 'n') {
+    event.preventDefault()
+    emit('new-chat', null)
   }
 }
+
+function handleDocumentPointer(event) {
+  if (!event.target.closest?.('.session-menu')) closeSessionMenu()
+  if (!projectMenu.project) return
+  if (event.target.closest?.('.project-popover, .project-menu-trigger')) return
+  closeProjectMenu()
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyboard)
+  document.addEventListener('pointerdown', handleDocumentPointer, true)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeyboard)
+  document.removeEventListener('pointerdown', handleDocumentPointer, true)
+})
 </script>
 
 <style scoped>
-.account-avatar { width: 34px; height: 34px; border-radius: 10px; background: #e3e9db; color: #3f6650; display: grid; place-items: center; flex-shrink: 0; font-weight: 600; }
-.account-copy { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.account-copy strong { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.account-copy span { font-size: 10px; color: #b7cad5; }
-.logout-btn { border: 1px solid #728995; border-radius: 7px; background: transparent; padding: 6px 9px; color: #edf2f4; cursor: pointer; font-size: 11px; }
-.logout-btn:hover { background: #395363; }
-.logout-btn:focus-visible { outline: 2px solid #a9c1c8; outline-offset: 3px; }
-.logout-btn:disabled { opacity: .65; cursor: wait; }
-.sidebar-footer { display: flex; align-items: center; gap: 10px; }
-.sidebar {
-  width: 286px;
-  height: calc(100vh - 36px);
-  background: #203a4b;
-  color: #f8f4eb;
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  border-radius: 24px;
-  box-shadow: 0 18px 40px rgba(31, 58, 77, .18);
-  overflow: hidden;
-  position: relative;
-}
-
-/* 侧边栏头部 */
-.sidebar-header {
-  padding: 26px 22px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, .12);
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 28px;
-}
-
-.logo-icon {
-  width: 42px;
-  height: 42px;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 5px;
-  padding: 8px;
-  border-radius: 13px;
-  background: #ee6c4d;
-  box-shadow: 0 8px 16px rgba(238, 108, 77, .25);
-}
-
-.logo-icon i {
-  display: block;
-  border: 2px solid #fff4e7;
-  border-radius: 50%;
-}
-
-.logo-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.logo-copy strong {
-  font-size: 17px;
-  letter-spacing: .08em;
-}
-
-.logo-copy span {
-  font-size: 9px;
-  letter-spacing: .18em;
-  color: #a9c1c8;
-}
-
-.new-chat-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 13px 16px;
-  background: #f4eee4;
-  color: #203a4b;
-  border: none;
-  border-radius: 13px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.new-chat-btn:hover {
-  transform: translateY(-2px);
-  background: #fffaf1;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, .12);
-}
-
-.new-chat-btn:active {
-  transform: translateY(0);
-}
-
-.new-chat-btn .icon {
-  font-size: 20px;
-  font-weight: 300;
-}
-
-/* 搜索框 */
-.search-box {
-  padding: 18px 22px 12px;
-}
-
-.search-input {
-  width: 100%;
-  padding: 11px 13px;
-  background: rgba(255, 255, 255, .08);
-  border: 1px solid rgba(255, 255, 255, .14);
-  border-radius: 11px;
-  color: #fff;
-  font-size: 14px;
-  outline: none;
-  transition: all 0.3s ease;
-}
-
-.search-input:focus {
-  border-color: #a9c1c8;
-  box-shadow: 0 0 0 3px rgba(169, 193, 200, .15);
-}
-
-.search-input::placeholder {
-  color: #a9c1c8;
-}
-
-/* 会话列表 */
-.session-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 0 12px;
-}
-
-.session-list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.session-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.session-list::-webkit-scrollbar-thumb {
-  background: #688592;
-  border-radius: 2px;
-}
-
-.session-list::-webkit-scrollbar-thumb:hover {
-  background: #a9c1c8;
-}
-
-.session-list-header {
-  padding: 12px 10px 8px;
-  font-size: 12px;
-  color: #b7cad5;
-  letter-spacing: 1px;
-  font-weight: 600;
-}
-
-.session-items {
-  padding-bottom: 8px;
-}
-
-.session-item {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 12px;
-  margin: 6px 0;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, .035);
-  cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-  border: 1px solid rgba(255, 255, 255, .06);
-}
-
-.session-item:hover,
-.session-item:focus-within {
-  background: rgba(255, 255, 255, .08);
-  border-color: rgba(255, 255, 255, .16);
-}
-
-.session-item.active {
-  background: #315366;
-  border-color: #7895a6;
-  box-shadow: inset 3px 0 #ee6c4d;
-}
-
-.session-info {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.session-title {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  font-size: 14px;
-  line-height: 1.55;
-  overflow-wrap: anywhere;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #f3f6f8;
-  font-weight: 400;
-}
-
-.session-item.active .session-title {
-  color: #ffffff;
-  font-weight: 500;
-}
-
-.session-time {
-  display: block;
-  font-size: 12px;
-  line-height: 1.5;
-  color: #b7cad5;
-  margin-top: 6px;
-}
-
-.session-item.active .session-time {
-  color: #d2e1e8;
-}
-
-.delete-btn {
-  opacity: 0;
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  padding: 4px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  color: #c4d3de;
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.session-item:hover .delete-btn,
-.session-item:focus-within .delete-btn,
-.session-item.active .delete-btn {
-  opacity: 1;
-}
-
-.delete-btn:hover {
-  background: rgba(238, 108, 77, .18);
-  border-color: rgba(238, 108, 77, .4);
-  color: #ffe1d8;
-}
-
-.delete-btn:focus-visible {
-  outline: 2px solid #a9c1c8;
-  outline-offset: 2px;
-}
-
-/* 空状态 */
-.empty-state {
-  padding: 60px 24px;
-  text-align: center;
-  color: #d7e4eb;
-}
-
-.empty-state p {
-  margin-bottom: 10px;
-}
-
-.empty-state .hint {
-  font-size: 13px;
-  color: #b7cad5;
-}
-
-/* 侧边栏底部 */
-.sidebar-footer {
-  padding: 20px 22px;
-  border-top: 1px solid rgba(255, 255, 255, .12);
-}
-
-.footer-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.version {
-  font-size: 12px;
-  color: #a9c1c8;
-  letter-spacing: 0.5px;
-}
-@media (hover: none) {
-  .delete-btn {
-    opacity: 1;
-  }
-}
-
-@media (max-width: 760px) {
-  .sidebar {
-    width: 100%;
-    height: auto;
-    border-radius: 0;
-  }
-}
+.sidebar { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; position: relative; background: #f3f2ee; color: #4d443d; }
+.sidebar-header { padding: 18px 14px 14px; }
+.brand-row { display: flex; align-items: center; gap: 9px; margin: 0 0 22px; }
+.sidebar-toggle { display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 32px; margin-left: auto; padding: 5px; border: 0; border-radius: 7px; background: transparent; color: #6b6a62; cursor: pointer; }
+.sidebar-toggle:hover { background: #e7e6e0; color: #303b36; }
+.sidebar-toggle:focus-visible { outline: 2px solid #a56b4e; outline-offset: 2px; }
+.sidebar-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+.logo-mark { width: 32px; height: 32px; display: grid; flex: 0 0 32px; grid-template-columns: repeat(2, 1fr); gap: 3px; padding: 7px; border-radius: 10px; background: #a46548; }
+.logo-mark i { border: 1.5px solid #fff7ef; border-radius: 50%; }
+.brand-copy { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.brand-copy strong { color: #383e38; font-size: 14px; letter-spacing: .02em; white-space: nowrap; }
+.brand-copy span { color: #6e736a; font-size: 11px; white-space: nowrap; }
+.new-chat-btn { display: flex; width: 100%; align-items: center; gap: 9px; padding: 11px 12px; border: 1px solid #b56b4c; border-radius: 11px; background: #a85e40; color: #fffaf5; cursor: pointer; font-size: 13px; font-weight: 650; box-shadow: 0 5px 12px rgba(153, 78, 49, .15); transition: .16s ease; }
+.new-chat-btn:hover { transform: translateY(-1px); background: #954e34; box-shadow: 0 8px 16px rgba(153, 78, 49, .19); }
+.new-chat-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.shortcut { margin-left: auto; color: #efd8cb; font-size: 9px; font-weight: 500; letter-spacing: .04em; }
+.search-box { display: flex; align-items: center; gap: 8px; margin-top: 11px; padding: 9px 11px; border: 1px solid #e1d6cc; border-radius: 10px; background: #fffdfa; transition: .16s ease; }
+.search-box:focus-within { border-color: #c49b83; box-shadow: 0 0 0 3px rgba(176, 111, 78, .1); }
+.search-box svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: #9f8d80; stroke-width: 1.8; stroke-linecap: round; }
+.search-box input { width: 100%; border: 0; outline: 0; background: transparent; color: #554a42; font-size: 12px; }
+.search-box input::placeholder { color: #ad9f94; }
+.navigation-scroll { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 13px 11px 18px; }
+.navigation-scroll::-webkit-scrollbar { width: 4px; }
+.navigation-scroll::-webkit-scrollbar-thumb { border-radius: 3px; background: #d2c1b4; }
+.nav-section + .nav-section { margin-top: 18px; }
+.section-heading { display: flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 8px; color: #8d7c70; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.section-heading button { display: grid; width: 25px; height: 25px; margin-left: auto; place-items: center; border: 0; border-radius: 7px; background: transparent; color: #8c7566; cursor: pointer; font-size: 18px; line-height: 1; }
+.section-heading button:hover { background: #eadfd5; color: #87523a; }
+.section-heading em { margin-left: auto; font-style: normal; letter-spacing: 0; }
+.project-block { margin: 2px 0 7px; }
+.project-row { display: flex; align-items: center; gap: 3px; border-radius: 10px; }
+.project-row:hover, .project-row.active { background: #eee3da; }
+.project-row.active { box-shadow: inset 3px 0 #b66f4e; }
+.project-expand { display: grid; width: 22px; height: 31px; flex: 0 0 22px; place-items: center; padding: 0; border: 0; background: transparent; color: #8f7c6e; cursor: pointer; }
+.project-expand .chevron { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .16s ease; }
+.project-expand .chevron.open { transform: rotate(90deg); }
+.project-select { display: flex; flex: 1; min-width: 0; align-items: center; gap: 7px; padding: 8px 2px; border: 0; background: transparent; color: #584b42; cursor: pointer; text-align: left; }
+.project-select .folder { width: 17px; height: 17px; flex: 0 0 17px; fill: none; stroke: #a96143; stroke-width: 1.7; stroke-linejoin: round; }
+.project-select span { overflow: hidden; flex: 1; font-size: 12px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.project-select em { min-width: 14px; color: #a39184; font-size: 9px; font-style: normal; text-align: center; }
+.project-more, .project-compose { display: grid; width: 26px; height: 26px; flex: 0 0 26px; place-items: center; padding: 0; border: 0; border-radius: 7px; background: transparent; color: #8b7769; cursor: pointer; opacity: 0; }
+.project-more { font-size: 12px; letter-spacing: 1px; }
+.project-compose { margin-right: 3px; }
+.project-compose svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.project-row:hover .project-more, .project-row:hover .project-compose, .project-row:focus-within .project-more, .project-row:focus-within .project-compose, .project-row.active .project-compose { opacity: 1; }
+.project-more:hover, .project-compose:hover { background: #dbc7b9; color: #794732; }
+.project-sessions { margin-left: 18px; padding-left: 8px; border-left: 1px solid #dfd2c7; }
+.project-empty, .no-result { margin: 6px 8px 11px; color: #a99b90; font-size: 10px; line-height: 1.5; }
+.pending-session { display: flex; align-items: center; gap: 8px; margin: 4px 0; padding: 8px 9px; border: 1px dashed #d7b8a5; border-radius: 9px; background: #f7eae0; color: #8a614e; font-size: 10px; }
+.pending-session span { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: #b76d4c; box-shadow: 0 0 0 3px #ecd0bf; }
+.pending-session.standalone { margin: 2px 0 5px; }
+.create-first-project { display: grid; width: calc(100% - 8px); grid-template-columns: 31px 1fr; margin: 4px; padding: 11px; border: 1px dashed #d7c5b8; border-radius: 11px; background: #fcf9f5; color: #77675c; cursor: pointer; text-align: left; }
+.create-first-project > span { grid-row: 1 / 3; align-self: center; color: #a86547; font-size: 20px; }
+.create-first-project strong { font-size: 11px; }
+.create-first-project small { margin-top: 2px; color: #a5968a; font-size: 9px; }
+.sidebar-footer { display: flex; align-items: center; gap: 9px; padding: 14px 17px; border-top: 1px solid #e2d8cf; background: #f3ede6; }
+.account-avatar { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 10px; background: #dfc8b7; color: #714b39; font-size: 13px; font-weight: 700; }
+.account-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 2px; }
+.account-copy strong { overflow: hidden; color: #53483f; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.account-copy span { color: #9c8e83; font-size: 9px; }
+.logout-btn { display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #8e796b; cursor: pointer; }
+.logout-btn:hover { border-color: #d8c6b8; background: #e8ddd3; color: #7d4b37; }
+.logout-btn:disabled { cursor: wait; opacity: .5; }
+.logout-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.dialog-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(45, 35, 28, .36); backdrop-filter: blur(3px); }
+.dialog-card { width: min(420px, 100%); display: grid; grid-template-columns: 46px 1fr; gap: 0 13px; padding: 24px; border: 1px solid #e1d3c7; border-radius: 18px; background: #fffcf8; box-shadow: 0 24px 70px rgba(48, 35, 27, .24); }
+.dialog-icon { display: grid; width: 46px; height: 46px; grid-row: 1 / 3; place-items: center; border-radius: 13px; background: #f0dfd1; color: #9a583e; font-size: 21px; }
+.dialog-copy h3 { margin: 1px 0 5px; color: #4f4037; font-size: 17px; }
+.dialog-copy p { margin: 0; color: #8d7d72; font-size: 11px; line-height: 1.5; }
+.dialog-card label { display: flex; grid-column: 1 / 3; flex-direction: column; gap: 7px; margin-top: 20px; }
+.dialog-card label span { color: #75665b; font-size: 11px; font-weight: 650; }
+.dialog-card input { padding: 11px 12px; border: 1px solid #dac9bc; border-radius: 10px; outline: none; background: #fff; color: #4d4139; font-size: 13px; }
+.dialog-card input:focus { border-color: #b67a5d; box-shadow: 0 0 0 3px rgba(182, 122, 93, .12); }
+.dialog-actions { display: flex; grid-column: 1 / 3; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.dialog-actions button { padding: 9px 14px; border: 1px solid #d9cbbf; border-radius: 9px; background: #fffaf5; color: #6e5c50; cursor: pointer; font-size: 11px; }
+.dialog-actions button.primary { border-color: #a96143; background: #a96143; color: #fff; }
+.dialog-actions button:disabled { cursor: not-allowed; opacity: .5; }
+.project-popover { position: fixed; z-index: 90; width: 292px; overflow: hidden; padding: 7px; border: 1px solid #ded3c9; border-radius: 14px; background: #fffdf9; box-shadow: 0 18px 48px rgba(54, 40, 31, .19); color: #55483f; }
+.popover-heading { display: flex; align-items: center; gap: 8px; padding: 8px 9px 10px; }
+.popover-heading svg { width: 17px; height: 17px; fill: none; stroke: #a96143; stroke-width: 1.7; stroke-linejoin: round; }
+.popover-heading strong { overflow: hidden; flex: 1; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.popover-heading > span { padding: 2px 6px; border-radius: 5px; background: #f1e5db; color: #917160; font-size: 8px; }
+.project-popover > button { display: flex; width: 100%; align-items: center; gap: 9px; padding: 8px 9px; border: 0; border-radius: 8px; background: transparent; color: #5f5047; cursor: pointer; text-align: left; }
+.project-popover > button:hover { background: #f4ece5; }
+.project-popover > button.popover-danger { color: #a34e3c; }
+.project-popover > button.popover-danger:hover { background: #faeae5; }
+.popover-row-icon { display: grid; width: 22px; height: 22px; flex: 0 0 22px; place-items: center; color: #96715f; font-size: 12px; }
+.project-popover button > span:last-child { display: flex; min-width: 0; flex-direction: column; gap: 1px; }
+.project-popover button strong { font-size: 11px; font-weight: 650; }
+.project-popover button small { color: #9a8b80; font-size: 9px; }
+.popover-divider { height: 1px; margin: 5px 1px; background: #e9dfd6; }
+@media (hover: none) { .project-more, .project-compose { opacity: 1; } }
+@media (max-width: 760px) { .sidebar { height: 100%; } }
 </style>

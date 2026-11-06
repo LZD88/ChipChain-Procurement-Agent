@@ -1,6 +1,6 @@
 <template>
   <!-- ============================================================ -->
-  <!-- 用户消息 - 右侧蓝色气泡 -->
+  <!-- 用户消息 - 右侧暖色气泡 -->
   <!-- ============================================================ -->
   <div v-if="message.role === 'user'" class="message-item message-user">
     <div class="message-content-wrapper">
@@ -25,7 +25,7 @@
     <div class="message-content-wrapper">
       <!-- 角色标签栏 -->
       <div class="msg-label-bar" :class="getLabelBarClass(message.source)">
-        <span class="msg-role-badge">AI</span>
+        <span class="msg-role-badge">芯链AI</span>
         <span v-if="message.source && message.source !== 'main'" class="msg-source-badge">
           {{ getSourceName(message.source) }}
         </span>
@@ -43,7 +43,7 @@
       <!-- 消息正文 -->
       <div class="message-content">
         <MarkdownRenderer :content="message.content" />
-        <p v-if="!message.content" class="reply-status" role="status">{{ isStreaming ? '正在处理，请稍候…' : '本轮暂无文字答复，可展开查看执行过程。' }}</p>
+        <p v-if="!message.content" class="reply-status" :class="{ active: isStreaming }" role="status">{{ isStreaming ? processingStatus : '本轮暂无文字答复，可展开查看执行过程。' }}</p>
         <span v-if="isStreaming && message.content" class="typing-cursor">▋</span>
         <ChartPreview v-for="image in message.images || []" :key="image" :source="image" title="分析图表" />
       </div>
@@ -60,7 +60,8 @@ import { getSourceName } from '../utils/messageSources.js'
 
 defineProps({
   message: { type: Object, required: true },
-  isStreaming: { type: Boolean, default: false }
+  isStreaming: { type: Boolean, default: false },
+  processingStatus: { type: String, default: '正在处理采购任务…' }
 })
 
 // ============================================================
@@ -96,25 +97,27 @@ function getAvatarClass(source) {
 </script>
 
 <style scoped>
-.response-process { margin: 0 0 14px; border: 1px solid #e0e5df; border-radius: 10px; background: #f5f7f3; }
-.response-process > summary { cursor: pointer; padding: 11px 14px; color: #667a72; font-size: 12px; }
-.response-process > summary:focus-visible { outline: 2px solid #597c6b; outline-offset: 2px; }
+.response-process { margin: 0 0 14px; border: 1px solid #e5dbd1; border-radius: 10px; background: #f8f3ed; }
+.response-process > summary { cursor: pointer; padding: 11px 14px; color: #776a60; font-size: 12px; }
+.response-process > summary:focus-visible { outline: 2px solid #a36a4f; outline-offset: 2px; }
 .response-process :deep(.tool-call-panel) { margin: 10px 14px 16px; }
-.process-note { padding: 10px 14px; font-size: 13px; color: #6a7972; border-top: 1px solid #e0e5df; }
+.process-note { padding: 10px 14px; font-size: 13px; color: #756961; border-top: 1px solid #e5dbd1; }
 .process-note > span { font-size: 11px; }
-.reply-status { color: #6a7972; font-size: 13px; }
+.reply-status { color: #756961; font-size: 13px; }
+.reply-status.active::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 9px; border-radius: 50%; background: #d1865f; box-shadow: 0 0 0 0 rgba(209,134,95,.38); animation: status-pulse 1.5s ease-out infinite; }
+@keyframes status-pulse { 70% { box-shadow: 0 0 0 7px rgba(209,134,95,0); } 100% { box-shadow: 0 0 0 0 rgba(209,134,95,0); } }
 /* ============================================================ */
 /* 基础布局 */
 /* ============================================================ */
 .message-item {
   display: flex;
   gap: 12px;
-  padding: 12px 24px;
+  padding: 18px 0;
   max-width: 100%;
 }
 
 .message-item.streaming {
-  background: linear-gradient(to right, transparent, rgba(14, 165, 233, 0.03), transparent);
+  background: transparent;
 }
 
 /* ============================================================ */
@@ -124,32 +127,28 @@ function getAvatarClass(source) {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
-  padding: 6px 0;
+  margin-bottom: 12px;
+  padding: 0;
   flex-wrap: wrap;
 }
 
 .msg-role-badge {
   display: inline-flex;
   align-items: center;
-  padding: 3px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 /* 主 Agent AI 标签 */
 .label-bar-main .msg-role-badge {
-  background: #dbeafe;
-  color: #1d4ed8;
+  color: #66705e;
 }
 
 /* 子 Agent AI 标签 */
 .label-bar-sub .msg-role-badge {
-  background: #ede9fe;
-  color: #7c3aed;
+  color: #66705e;
 }
 
 .msg-source-badge {
@@ -162,8 +161,8 @@ function getAvatarClass(source) {
 }
 
 .label-bar-sub .msg-source-badge {
-  background: #ddd6fe;
-  color: #6d28d9;
+  background: #f4ece4;
+  color: #725c4f;
 }
 
 /* ============================================================ */
@@ -174,26 +173,28 @@ function getAvatarClass(source) {
 }
 
 .message-user .message-content-wrapper {
-  max-width: 65%;
-  text-align: right;
+  max-width: min(72%, 760px);
+  min-width: 0;
 }
 
 .message-user .message-content {
-  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
-  border-radius: 18px 18px 6px 18px;
+  background: #eeeee7;
+  border: 0;
+  border-radius: 18px;
   padding: 14px 18px;
-  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2);
 }
 
 .message-user .content-text {
-  color: #fff;
+  color: #354031;
   font-size: 15px;
   line-height: 1.7;
+  text-align: left;
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
-.message-user .avatar { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+.message-user .avatar { background: linear-gradient(135deg, #c48767 0%, #9e6047 100%); }
 
 /* ============================================================ */
 /* AI 助手消息（左侧） */
@@ -201,26 +202,26 @@ function getAvatarClass(source) {
 .message-assistant { justify-content: flex-start; }
 
 .message-assistant .message-content-wrapper {
-  max-width: 80%;
-  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .message-assistant .message-content {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px 14px 14px 14px;
-  padding: 14px 18px;
+  background: transparent;
+  border: 0;
+  padding: 0;
   line-height: 1.7;
   overflow: hidden;
 }
 
-.avatar-main { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); }
-.avatar-sub { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); }
+.avatar-main { background: linear-gradient(135deg, #b67858 0%, #8f543f 100%); }
+.avatar-sub { background: linear-gradient(135deg, #987664 0%, #6f5549 100%); }
 
 /* ============================================================ */
 /* 通用样式 */
 /* ============================================================ */
-.message-avatar { flex-shrink: 0; }
+.message-avatar { display: none; }
 
 .avatar {
   width: 38px;
@@ -236,9 +237,15 @@ function getAvatarClass(source) {
 .typing-cursor {
   display: inline-block;
   animation: blink 1s infinite;
-  color: #0ea5e9;
+  color: #a86649;
   margin-left: 3px;
   font-weight: bold;
+}
+
+@media (max-width: 760px) {
+  .message-item { padding: 14px 0; gap: 0; }
+  .message-user .message-content-wrapper { max-width: 90%; }
+  .message-assistant .message-content-wrapper { max-width: 100%; }
 }
 
 /* ============================================================ */

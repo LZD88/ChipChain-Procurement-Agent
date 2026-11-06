@@ -29,6 +29,7 @@ class ChatRequest(BaseModel):
     """对话请求模型"""
     message: str = Field(..., description="用户消息")
     thread_id: Optional[str] = Field(None, description="会话 ID，为空则创建新会话")
+    project_id: Optional[str] = Field(None, max_length=64, description="新会话所属项目；已有会话忽略此字段")
     model_config = {"extra": "forbid"}  # 用户身份仅从登录会话读取。
 
 
@@ -66,6 +67,33 @@ class Session(BaseModel):
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="最后更新时间")
     message_count: int = Field(0, description="消息数量")
+    project_id: Optional[str] = Field(None, description="所属项目 ID")
+    pinned: bool = Field(False, description="是否置顶")
+
+
+class ChatProject(BaseModel):
+    """会话项目。"""
+    project_id: str
+    name: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class ProjectCreateRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=40)
+    model_config = {"extra": "forbid"}
+
+
+class ProjectUpdateRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=40)
+    model_config = {"extra": "forbid"}
+
+
+class SessionUpdateRequest(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=80)
+    pinned: Optional[bool] = None
+    project_id: Optional[str] = Field(None, max_length=64)
+    model_config = {"extra": "forbid"}
 
 
 class SessionListResponse(BaseModel):

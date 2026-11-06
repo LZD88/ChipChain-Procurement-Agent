@@ -16,6 +16,7 @@ from mcp_server.tools.suppliers_tools import register_supplier_tools
 from mcp_server.tools.parts_tools import register_parts_tools
 from mcp_server.tools.order_tools import register_order_tools
 from mcp_server.tools.inventory_tools import register_inventory_tools
+from mcp_server.tools.procurement_tools import register_procurement_tools
 
 
 # 注册所有分组
@@ -23,6 +24,7 @@ register_supplier_tools(mcp)
 register_parts_tools(mcp)
 register_order_tools(mcp)
 register_inventory_tools(mcp)
+register_procurement_tools(mcp)
 
 
 

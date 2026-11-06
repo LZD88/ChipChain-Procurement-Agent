@@ -46,3 +46,42 @@ export async function deleteSession(threadId) {
 
   return response.json()
 }
+
+export async function updateSession(threadId, changes) {
+  const response = await apiFetch(`${API_BASE}/${encodeURIComponent(threadId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes)
+  })
+  return response.json()
+}
+
+export async function getProjects() {
+  const response = await apiFetch('/api/projects')
+  return response.json()
+}
+
+export async function createProject(name) {
+  const response = await apiFetch('/api/projects', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name })
+  })
+  return response.json()
+}
+
+export async function updateProject(projectId, changes) {
+  const response = await apiFetch(`/api/projects/${encodeURIComponent(projectId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes)
+  })
+  return response.json()
+}
+
+export async function deleteProject(projectId) {
+  const response = await apiFetch(`/api/projects/${encodeURIComponent(projectId)}`, {
+    method: 'DELETE'
+  })
+  return response.json()
+}
