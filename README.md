@@ -10,6 +10,7 @@
 
 ## 项目亮点
 
+- **端到端采购闭环**：将自然语言需求一次编排为物料匹配、库存核验、供应商准入、预算/交期/MOQ 校验、可解释推荐和采购单创建。
 - **多智能体协作**：主 Agent 负责任务规划，采购分析、订单处理、图表生成等专用 Agent 分工执行。
 - **MCP 业务解耦**：通过 MCP 对接芯片物料、供应商、库存与订单服务，模型层与业务系统保持清晰边界。
 - **可控执行链路**：创建和修改订单前进入 Human-in-the-Loop 审批，敏感操作可审计、可中断、可恢复。
@@ -25,12 +26,14 @@ flowchart LR
     U[采购人员] --> V[Vue 工作台]
     V --> API[FastAPI / SSE]
     API --> G[DeepAgents 主 Agent]
+    G --> P[采购闭环编排 Agent]
     G --> A[采购分析 Agent]
     G --> O[订单 Agent]
     G --> C[图表 Agent]
     G --> R[研究 Agent]
     G --> H{人工审批}
-    A & O --> MCP[ERP MCP Server]
+    P --> H
+    P & A & O --> MCP[ERP MCP Server]
     MCP --> ERP[Chip Supply REST API]
     G --> S[OpenSandbox]
     G --> DB[(MySQL Checkpoints & Auth)]
@@ -48,8 +51,6 @@ flowchart LR
 | 服务端 | Python、FastAPI、SSE |
 | 前端 | Vue 3、Vite |
 | 持久化 | MySQL、LangGraph Checkpoint MySQL |
-
-## 安装与启动
 
 ## 安装与启动
 
@@ -82,6 +83,25 @@ Web 启动器使用后端 8090、前端 3000。独立的命令行交互入口为
 控制台默认输出启动摘要、沙箱生命周期和异常；在 `.env` 中设置 `LOG_LEVEL=DEBUG`
 可查看 MCP 加载、沙箱命令执行和文件同步细节。第三方库默认仅输出警告和错误。
 Web 和 CLI 使用同一份日志配置；`APP_ENV=production` 时同时追加写入 `erp_agent.log`。
+
+## 采购闭环演示
+
+在工作台点击“多 Agent 采购闭环”，或直接输入：
+
+```text
+帮我采购500片六轴惯性传感器，预算4000元，要求两周内交付。先核验库存和供应商，给出方案后创建采购单。
+```
+
+主 Agent 会把完整请求一次委派给 `procurement-orchestrator`。编排 Agent 按固定顺序查询物料、
+库存和供应商，校验预算、交期与最小起订量，并给出带评分依据的推荐方案。只有用户明确要求
+执行采购时才会调用 `order_create`，且写入前必须经过人工批准；批准后创建的订单固定处于
+“待审核”状态，备注中保留供应商、库存和约束校验摘要，供供应链平台审计追踪。
+
+只读验证不会创建订单：
+
+```shell
+PYTHONPATH=src python scripts/verify_procurement_loop.py
+```
 
 界面按用户提问分组：一条问题对应一个助手答复区块，正文展示主助手最后的答复，
 中间说明、子助手输出和工具调用收进可展开的“执行过程”。历史记录采用相同规则；
