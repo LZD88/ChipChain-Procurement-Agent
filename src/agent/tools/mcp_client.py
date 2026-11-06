@@ -46,7 +46,7 @@ async def load_mcp_tools(
 
     Returns:
         (analyst_tools, order_tools, chart_tools) 三元组
-        - analyst_tools: 供应商查询 + 零部件查询 + 库存预警工具
+        - analyst_tools: 供应商查询 + 零部件查询 + 库存查询/预警工具
         - order_tools: 订单创建 + 订单更新 + 订单搜索工具
         - chart_tools: 图表/地图/可视化生成工具（来自魔塔社区 MCP Server，27 种）
     """

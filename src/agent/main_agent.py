@@ -45,6 +45,7 @@ from agent.config import (
 )
 from agent.memory.prompts import (
     PROCUREMENT_ANALYST_PROMPT,
+    PROCUREMENT_ORCHESTRATOR_PROMPT,
     PROCUREMENT_ORDER_PROMPT,
     system_prompt,
 )
@@ -208,6 +209,33 @@ async def create_main_agent(
         },
         "middleware": create_order_middleware(),
     }
+    procurement_orchestrator: SubAgent = {
+        "name": "procurement-orchestrator",
+        "description": (
+            "端到端采购闭环编排专家。负责把自然语言采购需求依次转换为物料匹配、"
+            "库存核验、供应商状态与信用核验、预算/交期/MOQ 校验、可解释推荐方案，"
+            "并在人工批准后创建待审核采购订单。用户说‘帮我采购/需要采购/从需求到下单/"
+            "给出方案并执行’时必须委派给此 Agent；不要拆分给分析和订单两个 Agent。"
+        ),
+        "system_prompt": PROCUREMENT_ORCHESTRATOR_PROMPT,
+        "tools": [
+            mcp_tools["part_query"],
+            mcp_tools["part_search"],
+            mcp_tools["part_by_supplier"],
+            mcp_tools["inventory_query"],
+            mcp_tools["inventory_warning"],
+            mcp_tools["supplier_get"],
+            mcp_tools["supplier_query"],
+            mcp_tools["order_search_details"],
+            mcp_tools["order_create"],
+            request_order_info,
+        ],
+        "skills": ["/skills/procurement/", "/skills/order/"],
+        "interrupt_on": {
+            "order_create": {"allowed_decisions": ["approve", "reject"]},
+        },
+        "middleware": create_order_middleware(),
+    }
 
     # ---- Phase 4: 主 Agent 中间件栈 ----
     main_middleware = [
@@ -232,6 +260,11 @@ async def create_main_agent(
         SandboxCircuitBreakerMiddleware(),
         # 8. 调用限制
         ModelCallLimitMiddleware(run_limit=50),
+        # 同一轮只能委派一次。子 Agent 已返回后，主 Agent 必须整理结果并回答，
+        # 防止模型重复委派甚至误派到另一个业务 Agent。
+        ToolCallLimitMiddleware(
+            tool_name="task", run_limit=1, exit_behavior="continue",
+        ),
         ToolCallLimitMiddleware(run_limit=200),
     ]
 
@@ -242,7 +275,7 @@ async def create_main_agent(
         skills=["/skills/main/"],
         memory=[AGENTS_MD_FILENAME],
         tools=[web_search, assign_skill, download_sandbox_file],
-        subagents=[procurement_analyst, procurement_order],
+        subagents=[procurement_orchestrator, procurement_analyst, procurement_order],
         middleware=main_middleware,
         backend=backend,
         store=STORE,

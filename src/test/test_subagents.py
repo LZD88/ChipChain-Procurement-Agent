@@ -33,13 +33,13 @@ class SubagentTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.executed = []
         names = [
-            "supplier_query", "part_query", "part_search", "part_by_supplier",
-            "inventory_warning", "order_create", "order_update", "order_search_details",
+            "supplier_get", "supplier_query", "part_query", "part_search", "part_by_supplier",
+            "inventory_query", "inventory_warning", "order_create", "order_update", "order_search_details",
         ]
         self.tools = {name: self.make_tool(name) for name in names}
         self.precomputed = main_agent.PrecomputedContext(
-            analyst_mcp_tools=[self.tools[name] for name in names[:5]],
-            order_mcp_tools=[self.tools[name] for name in names[5:]],
+            analyst_mcp_tools=[self.tools[name] for name in names[:7]],
+            order_mcp_tools=[self.tools[name] for name in names[7:]],
             chart_tool=self.make_tool("generate_chart"),
         )
         self.model = ToolCallingModel(
@@ -92,10 +92,11 @@ class SubagentTests(unittest.IsolatedAsyncioTestCase):
         self.precomputed.analyst_mcp_tools.append(self.make_tool("supplier_query_debug"))
         self.precomputed.order_mcp_tools.append(self.make_tool("order_create_debug"))
         graph, arguments, _ = await self.create_graph()
-        analyst, order = arguments["subagents"]
+        orchestrator, analyst, order = arguments["subagents"]
+        self.assertEqual(len(orchestrator["tools"]), 10)
         self.assertEqual(len(analyst["tools"]), 8)
         self.assertEqual(len(order["tools"]), 5)
-        for subagent in (analyst, order):
+        for subagent in (orchestrator, analyst, order):
             bound = {tool.name: tool for tool in subagent["tools"]}
             self.assertFalse(any(name.endswith("_debug") for name in bound))
             for name in bound.keys() & self.tools.keys():
@@ -116,15 +117,39 @@ class SubagentTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(first["backend"].default, first_sandbox)
         self.assertIs(second["backend"].default, second_sandbox)
         for arguments in (first, second):
-            analyst, order = arguments["subagents"]
+            orchestrator, analyst, order = arguments["subagents"]
+            self.assertEqual(orchestrator["skills"], ["/skills/procurement/", "/skills/order/"])
             self.assertEqual(analyst["skills"], ["/skills/procurement/"])
             self.assertEqual(order["skills"], ["/skills/order/"])
         for old, new in zip(first["subagents"], second["subagents"]):
             self.assertIsNot(old, new)
             for old_middleware, new_middleware in zip(old["middleware"], new["middleware"]):
                 self.assertIsNot(old_middleware, new_middleware)
-        first["subagents"][1]["interrupt_on"]["order_create"]["allowed_decisions"].clear()
-        self.assertEqual(second["subagents"][1]["interrupt_on"]["order_create"]["allowed_decisions"], ["approve", "reject"])
+        first["subagents"][2]["interrupt_on"]["order_create"]["allowed_decisions"].clear()
+        self.assertEqual(second["subagents"][2]["interrupt_on"]["order_create"]["allowed_decisions"], ["approve", "reject"])
+
+    async def test_orchestrator_order_write_waits_for_approval(self):
+        self.model.responses = [
+            AIMessage(content="", tool_calls=[{
+                "name": "task", "id": "delegate", "args": {
+                    "subagent_type": "procurement-orchestrator", "description": "完成采购闭环",
+                },
+            }]),
+            AIMessage(content="", tool_calls=[{"name": "order_create", "id": "write", "args": {}}]),
+            AIMessage(content="闭环任务结束"),
+            AIMessage(content="处理完成"),
+        ]
+        graph, _, _ = await self.create_graph()
+        config = {"configurable": {"thread_id": "orchestrator-approval", "user_id": "test-user"}}
+        context = main_agent.ProcurementContext(user_id="test-user", username="测试用户")
+        result = await graph.ainvoke({"messages": [("user", "帮我采购并下单")]}, config, context=context)
+        self.assertEqual(self.executed, [])
+        interrupt = result["__interrupt__"][0].value
+        self.assertEqual(interrupt["action_requests"][0]["name"], "order_create")
+        await graph.ainvoke(
+            Command(resume={"decisions": [{"type": "approve"}]}), config, context=context,
+        )
+        self.assertEqual(self.executed, ["order_create"])
 
     async def test_order_writes_wait_for_approval_and_respect_rejection(self):
         for tool_name in ("order_create", "order_update"):

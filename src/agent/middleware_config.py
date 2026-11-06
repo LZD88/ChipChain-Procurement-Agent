@@ -19,8 +19,8 @@ def create_analyst_middleware(model, backend) -> list:
 
     包含:
     - SummarizationToolMiddleware: 阶段完成后主动压缩上下文
-    - ModelCallLimitMiddleware: 防止无限循环（最多 50 次模型调用）
-    - ToolCallLimitMiddleware: 防止工具调用爆炸（最多 200 次）
+    - ModelCallLimitMiddleware: 防止无限循环（最多 15 次模型调用）
+    - ToolCallLimitMiddleware: 防止工具调用爆炸（最多 20 次）
 
     Args:
         model: 用于摘要生成的模型（建议用小模型如 deepseek-v4-flash）
@@ -31,8 +31,8 @@ def create_analyst_middleware(model, backend) -> list:
     """
     return [
         create_summarization_tool_middleware(model, backend),
-        ModelCallLimitMiddleware(run_limit=50),
-        ToolCallLimitMiddleware(run_limit=200),
+        ModelCallLimitMiddleware(run_limit=15, exit_behavior="end"),
+        ToolCallLimitMiddleware(run_limit=20, exit_behavior="end"),
     ]
 
 
