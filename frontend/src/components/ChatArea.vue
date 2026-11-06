@@ -251,11 +251,14 @@ function scrollToBottom() {
 .node-mark { width: 46px; height: 46px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; padding: 8px; transform: rotate(45deg); }
 .node-mark i { border: 3px solid #f5c76b; border-radius: 50%; }
 .eyebrow { color: #ee6c4d; font-size: 11px; font-weight: 700; letter-spacing: .2em; }
-.empty-state h2 { max-width: 620px; margin: 12px 0 10px; color: #203a4b; background: none; -webkit-text-fill-color: initial; font-size: clamp(25px, 4vw, 42px); line-height: 1.18; letter-spacing: -.04em; }
+.empty-state h2 { width: 100%; max-width: 900px; margin: 12px 0 10px; color: #203a4b; background: none; -webkit-text-fill-color: initial; font-size: clamp(25px, 3vw, 42px); line-height: 1.25; letter-spacing: -.04em; text-wrap: balance; }
 .empty-state p { max-width: 500px; margin-bottom: 34px; color: #718087; }
-.feature-list { gap: 12px; max-width: 640px; }
-.feature-item { min-width: 240px; padding: 15px 16px; background: rgba(255,255,255,.72); border: 1px solid #e1d9cd; border-radius: 14px; box-shadow: none; }
+.feature-list { width: 100%; gap: 12px; max-width: 492px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.feature-item { min-width: 0; padding: 15px 16px; background: rgba(255,255,255,.72); border: 1px solid #e1d9cd; border-radius: 14px; box-shadow: none; }
 .feature-item:hover { border-color: #ee6c4d; box-shadow: 0 10px 24px rgba(238,108,77,.1); }
 .feature-icon { color: #ee6c4d; font-size: 11px; font-weight: 800; letter-spacing: .1em; }
 .feature-item span:last-child { color: #334850; }
+@media (max-width: 540px) {
+  .feature-list { grid-template-columns: minmax(0, 1fr); max-width: 320px; }
+}
 </style>
