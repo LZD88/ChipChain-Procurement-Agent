@@ -9,22 +9,22 @@
         <h2>把复杂工作，交给一个清晰的工作台</h2>
         <p>采购、库存与供应商信息，都可以在这里被整理成下一步行动。</p>
         <div class="feature-list">
-          <div class="feature-item">
+          <button type="button" class="feature-item featured" @click="emit('suggest', '帮我采购500片六轴惯性传感器，预算4000元，要求两周内交付。先核验库存和供应商，给出方案后创建采购单。')">
             <span class="feature-icon">01</span>
-            <span>数据分析和图表生成</span>
-          </div>
-          <div class="feature-item">
+            <span>多 Agent 采购闭环</span>
+          </button>
+          <button type="button" class="feature-item" @click="emit('suggest', '对比六轴惯性传感器的供应商、采购价、交期和信用评级，给出推荐方案。')">
             <span class="feature-icon">02</span>
-            <span>网络搜索和信息查询</span>
-          </div>
-          <div class="feature-item">
+            <span>供应商比价与风险核验</span>
+          </button>
+          <button type="button" class="feature-item" @click="emit('suggest', '检查当前库存预警，并说明哪些物料需要优先补货。')">
             <span class="feature-icon">03</span>
-            <span>技能skill安装与扩展</span>
-          </div>
-          <div class="feature-item">
+            <span>库存预警与补货建议</span>
+          </button>
+          <button type="button" class="feature-item" @click="emit('suggest', '查询最近的采购订单并总结当前状态。')">
             <span class="feature-icon">04</span>
-            <span>文档处理和写作</span>
-          </div>
+            <span>订单查询与审计追踪</span>
+          </button>
         </div>
       </div>
 
@@ -45,6 +45,8 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import MessageItem from './MessageItem.vue'
 import { groupReplyTurns } from '../utils/toolCalls.js'
+
+const emit = defineEmits(['suggest'])
 
 /**
  * 对话区域组件
@@ -211,6 +213,9 @@ function scrollToBottom() {
   border-radius: 14px;
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
 }
 
 .feature-item:hover {
@@ -218,6 +223,7 @@ function scrollToBottom() {
   border-color: #0ea5e9;
   box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1);
 }
+.feature-item.featured { border-color: #ee6c4d; background: #fff8f3; }
 
 .feature-icon {
   font-size: 24px;

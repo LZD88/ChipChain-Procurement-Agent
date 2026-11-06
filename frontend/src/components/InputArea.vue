@@ -1,21 +1,7 @@
 <template>
   <div class="input-area">
     <div class="input-container">
-      <!-- 工具调用开关 -->
-      <div class="tool-toggle">
-        <label class="toggle-label">
-          <input
-            type="checkbox"
-            :checked="showToolCalls"
-            @change="emit('toggle-tool-calls', $event.target.checked)"
-            class="toggle-checkbox"
-          />
-          <span class="toggle-switch"></span>
-          <span class="toggle-text">显示工具调用</span>
-        </label>
-      </div>
-
-      <!-- 输入框 -->
+      <!-- 输入卡片：编辑区与辅助操作收在同一个视觉容器中 -->
       <div class="input-wrapper" :class="{ focused: isFocused, streaming: streaming }">
         <textarea
           ref="textareaRef"
@@ -29,29 +15,47 @@
           :disabled="streaming"
           class="input-textarea"
         ></textarea>
-        <!-- 发送按钮：流式时变为停止按钮 -->
-        <button
-          v-if="!streaming"
-          class="send-btn"
-          @click="handleSend"
-          :disabled="!inputText.trim()"
-        >
-          <span>发送</span>
-        </button>
-        <button
-          v-else
-          class="stop-btn"
-          @click="handleStop"
-        >
-          <span class="stop-icon">■</span>
-          <span>停止</span>
-        </button>
-      </div>
 
-      <!-- 提示信息 -->
-      <div class="input-hint">
-        <span v-if="!streaming">按 Enter 发送，Shift + Enter 换行</span>
-        <span v-else class="streaming-hint">正在生成回复...</span>
+        <div class="composer-toolbar">
+          <label class="toggle-label" title="控制是否在对话中展开 Agent 工具调用过程">
+            <input
+              type="checkbox"
+              :checked="showToolCalls"
+              @change="emit('toggle-tool-calls', $event.target.checked)"
+              class="toggle-checkbox"
+            />
+            <span class="toggle-switch"></span>
+            <span class="toggle-text">执行过程</span>
+          </label>
+
+          <div class="composer-actions">
+            <span v-if="!streaming" class="input-hint">Enter 发送 · Shift + Enter 换行</span>
+            <span v-else class="input-hint streaming-hint">正在生成回复...</span>
+
+            <button
+              v-if="!streaming"
+              class="send-btn"
+              type="button"
+              aria-label="发送消息"
+              @click="handleSend"
+              :disabled="!inputText.trim()"
+            >
+              <span>发送</span>
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M4 10h11M11 6l4 4-4 4" />
+              </svg>
+            </button>
+            <button
+              v-else
+              class="stop-btn"
+              type="button"
+              @click="handleStop"
+            >
+              <span class="stop-icon">■</span>
+              <span>停止</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -126,39 +130,40 @@ function autoResize() {
 
 <style scoped>
 .input-area {
-  padding: 16px 24px 24px;
-  background: #ffffff;
-  border-top: 1px solid #e2e8f0;
+  padding: 12px clamp(18px, 5vw, 72px) 16px;
+  background: linear-gradient(180deg, rgba(251, 250, 247, 0.78), #fbfaf7 32%);
+  border-top: 1px solid #e7dfd4;
 }
 
 .input-container {
-  max-width: 1100px;
+  max-width: 920px;
   margin: 0 auto;
-}
-
-/* 工具调用开关 */
-.tool-toggle {
-  margin-bottom: 12px;
 }
 
 .toggle-label {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
   user-select: none;
+  min-height: 32px;
+  padding: 0 2px;
 }
 
 .toggle-checkbox {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .toggle-switch {
   position: relative;
-  width: 44px;
-  height: 24px;
-  background: #e2e8f0;
-  border-radius: 12px;
+  width: 34px;
+  height: 19px;
+  background: #d8d3ca;
+  border-radius: 999px;
   transition: all 0.2s ease;
 }
 
@@ -167,68 +172,72 @@ function autoResize() {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
   background: #fff;
   border-radius: 50%;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 4px rgba(32, 58, 75, 0.22);
 }
 
 .toggle-checkbox:checked + .toggle-switch {
-  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+  background: #ee6c4d;
 }
 
 .toggle-checkbox:checked + .toggle-switch::after {
-  transform: translateX(20px);
-  background: #fff;
+  transform: translateX(15px);
+}
+
+.toggle-checkbox:focus-visible + .toggle-switch {
+  box-shadow: 0 0 0 3px rgba(238, 108, 77, 0.18);
 }
 
 .toggle-text {
-  font-size: 13px;
-  color: #64748b;
-  font-weight: 500;
+  font-size: 12px;
+  color: #718087;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
-/* 输入框包装 */
 .input-wrapper {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  padding: 14px 16px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  transition: all 0.2s ease;
+  padding: 12px 12px 10px 16px;
+  background: #fff;
+  border: 1px solid #d9d0c4;
+  border-radius: 20px;
+  box-shadow: 0 10px 28px rgba(38, 42, 39, 0.07), 0 2px 7px rgba(38, 42, 39, 0.035);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .input-wrapper.focused {
-  border-color: #0ea5e9;
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+  border-color: #ee6c4d;
+  box-shadow: 0 0 0 3px rgba(238, 108, 77, 0.11), 0 13px 30px rgba(38, 42, 39, 0.08);
 }
 
 .input-wrapper.streaming {
-  background: #fef2f2;
-  border-color: #fecaca;
+  background: #fffafa;
+  border-color: #efc9bf;
 }
 
-/* 输入框 */
 .input-textarea {
-  flex: 1;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
   border: none;
   background: transparent;
   font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.55;
   resize: none;
   outline: none;
-  min-height: 24px;
+  min-height: 30px;
   max-height: 200px;
-  color: #1e293b;
-  font-weight: 500;
+  padding: 4px 4px 6px 0;
+  color: #203a4b;
+  font-family: inherit;
+  font-weight: 400;
 }
 
 .input-textarea::placeholder {
-  color: #94a3b8;
+  color: #9babb3;
 }
 
 .input-textarea:disabled {
@@ -236,24 +245,63 @@ function autoResize() {
   cursor: not-allowed;
 }
 
-/* 发送按钮 */
+.composer-toolbar,
+.composer-actions {
+  display: flex;
+  align-items: center;
+}
+
+.composer-toolbar {
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 36px;
+  margin-top: 3px;
+}
+
+.composer-actions {
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.input-hint {
+  color: #a09d95;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
 .send-btn {
   flex-shrink: 0;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 15px;
+  background: #ee6c4d;
   color: #fff;
   border: none;
-  border-radius: 12px;
-  font-size: 14px;
+  border-radius: 11px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+  box-shadow: 0 7px 14px rgba(238, 108, 77, 0.22);
+}
+
+.send-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .send-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+  background: #d9573b;
+  box-shadow: 0 10px 18px rgba(238, 108, 77, 0.3);
 }
 
 .send-btn:active:not(:disabled) {
@@ -261,24 +309,24 @@ function autoResize() {
 }
 
 .send-btn:disabled {
-  background: #e2e8f0;
-  color: #94a3b8;
+  background: #e9e4dc;
+  color: #a9a59e;
   cursor: not-allowed;
   box-shadow: none;
 }
 
-/* 停止按钮 */
 .stop-btn {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 18px;
+  min-height: 36px;
+  padding: 0 15px;
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: #fff;
   border: none;
-  border-radius: 12px;
-  font-size: 14px;
+  border-radius: 11px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -299,20 +347,28 @@ function autoResize() {
   font-size: 12px;
 }
 
-/* 提示信息 */
-.input-hint {
-  margin-top: 10px;
-  text-align: center;
-}
-
-.input-hint span {
-  font-size: 12px;
-  color: #94a3b8;
-}
-
 .streaming-hint {
-  color: #ef4444 !important;
+  color: #dc5d45;
   animation: blink 1.5s ease-in-out infinite;
+}
+
+@media (max-width: 720px) {
+  .input-area {
+    padding: 10px 12px 12px;
+  }
+
+  .input-wrapper {
+    padding: 10px 10px 8px 13px;
+    border-radius: 17px;
+  }
+
+  .input-hint {
+    display: none;
+  }
+
+  .composer-toolbar {
+    gap: 10px;
+  }
 }
 
 @keyframes stopPulse {
@@ -324,18 +380,4 @@ function autoResize() {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
-</style>
-
-<style scoped>
-.input-area { padding: 15px clamp(18px, 5vw, 72px) 22px; background: #fbfaf7; border-top: 1px solid #e7dfd4; }
-.input-container { max-width: 1040px; }
-.tool-toggle { margin-bottom: 10px; }
-.toggle-text { color: #718087; }
-.toggle-checkbox:checked + .toggle-switch { background: #ee6c4d; }
-.input-wrapper { padding: 12px 13px; background: #fff; border: 1px solid #d9d0c4; border-radius: 17px; box-shadow: 0 7px 18px rgba(38,42,39,.05); }
-.input-wrapper.focused { border-color: #ee6c4d; box-shadow: 0 0 0 3px rgba(238,108,77,.12); }
-.input-textarea { color: #203a4b; }
-.send-btn { padding: 11px 20px; background: #ee6c4d; border-radius: 12px; box-shadow: 0 7px 14px rgba(238,108,77,.24); }
-.send-btn:hover:not(:disabled) { background: #d9573b; box-shadow: 0 10px 18px rgba(238,108,77,.3); }
-.input-hint span { color: #a09d95; }
 </style>

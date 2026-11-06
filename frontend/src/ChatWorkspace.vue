@@ -27,6 +27,7 @@
         :messages="messages"
         :streaming="isStreaming || isResuming"
         :show-tool-calls="showToolCalls"
+        @suggest="handleSend"
       />
 
       <!-- ★ 人工介入中断横幅（数据补充 / HITL 审批） -->
