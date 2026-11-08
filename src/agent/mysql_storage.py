@@ -18,6 +18,8 @@ from pathlib import Path
 import aiomysql
 from dotenv import load_dotenv
 
+from agent.authorization import bootstrap_grants_from_env, validate_capability
+
 from langgraph.checkpoint.mysql.aio import AIOMySQLSaver
 
 
@@ -158,7 +160,218 @@ APPLICATION_DDL = {
         created_at DATETIME(6) NOT NULL,
         updated_at DATETIME(6) NOT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "procurement_decisions": """CREATE TABLE IF NOT EXISTS procurement_decisions (
+        decision_id VARCHAR(32) NOT NULL,
+        owner_user_id VARCHAR(32) NOT NULL,
+        thread_id VARCHAR(150) NULL,
+        policy_version VARCHAR(64) NOT NULL,
+        canonicalization_version VARCHAR(64) NOT NULL,
+        evidence_fingerprint CHAR(64) NOT NULL,
+        request_json JSON NULL,
+        source_json JSON NULL,
+        result_json JSON NULL,
+        trace_id VARCHAR(64) NULL,
+        created_at DATETIME(6) NOT NULL,
+        expires_at DATETIME(6) NOT NULL,
+        purged_at DATETIME(6) NULL,
+        purge_reason VARCHAR(255) NULL,
+        PRIMARY KEY (decision_id, owner_user_id),
+        INDEX idx_decision_owner_created (owner_user_id, created_at),
+        INDEX idx_decision_policy (policy_version, created_at),
+        INDEX idx_decision_trace (trace_id),
+        FOREIGN KEY (owner_user_id) REFERENCES app_users(username) ON DELETE RESTRICT,
+        FOREIGN KEY (thread_id) REFERENCES chat_threads(thread_id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "procurement_decision_events": """CREATE TABLE IF NOT EXISTS procurement_decision_events (
+        event_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        decision_id VARCHAR(32) NOT NULL,
+        owner_user_id VARCHAR(32) NOT NULL,
+        event_type VARCHAR(64) NOT NULL,
+        event_key VARCHAR(128) NULL,
+        actor_user_id VARCHAR(32) NULL,
+        payload_json JSON NULL,
+        created_at DATETIME(6) NOT NULL,
+        UNIQUE KEY uq_decision_event_key (decision_id, owner_user_id, event_key),
+        INDEX idx_decision_event_time (decision_id, owner_user_id, created_at),
+        FOREIGN KEY (decision_id, owner_user_id)
+            REFERENCES procurement_decisions(decision_id, owner_user_id) ON DELETE RESTRICT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "procurement_decision_claims": """CREATE TABLE IF NOT EXISTS procurement_decision_claims (
+        decision_id VARCHAR(32) NOT NULL,
+        owner_user_id VARCHAR(32) NOT NULL,
+        claim_token CHAR(64) NOT NULL,
+        idempotency_key VARCHAR(128) NOT NULL,
+        claim_state VARCHAR(32) NOT NULL,
+        lease_expires_at DATETIME(6) NULL,
+        order_number VARCHAR(64) NULL,
+        order_id BIGINT NULL,
+        trace_id VARCHAR(64) NULL,
+        erp_audit_ref VARCHAR(128) NULL,
+        claimed_at DATETIME(6) NOT NULL,
+        resolved_at DATETIME(6) NULL,
+        PRIMARY KEY (decision_id, owner_user_id),
+        UNIQUE KEY uq_decision_claim_token (claim_token),
+        UNIQUE KEY uq_decision_idempotency (idempotency_key),
+        INDEX idx_decision_claim_state (claim_state, claimed_at),
+        FOREIGN KEY (decision_id, owner_user_id)
+            REFERENCES procurement_decisions(decision_id, owner_user_id) ON DELETE RESTRICT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "procurement_replays": """CREATE TABLE IF NOT EXISTS procurement_replays (
+        replay_id CHAR(36) NOT NULL PRIMARY KEY,
+        decision_id VARCHAR(32) NOT NULL,
+        owner_user_id VARCHAR(32) NOT NULL,
+        policy_version VARCHAR(64) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        manifest_json JSON NOT NULL,
+        result_json JSON NULL,
+        diff_json JSON NULL,
+        created_by VARCHAR(32) NOT NULL,
+        created_at DATETIME(6) NOT NULL,
+        INDEX idx_replay_decision (decision_id, owner_user_id, created_at),
+        FOREIGN KEY (decision_id, owner_user_id)
+            REFERENCES procurement_decisions(decision_id, owner_user_id) ON DELETE RESTRICT,
+        FOREIGN KEY (created_by) REFERENCES app_users(username) ON DELETE RESTRICT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "app_capability_grants": """CREATE TABLE IF NOT EXISTS app_capability_grants (
+        username VARCHAR(32) NOT NULL,
+        capability VARCHAR(64) NOT NULL,
+        granted_by VARCHAR(32) NULL,
+        granted_at DATETIME(6) NOT NULL,
+        revoked_at DATETIME(6) NULL,
+        PRIMARY KEY (username, capability),
+        INDEX idx_capability_active (capability, revoked_at),
+        FOREIGN KEY (username) REFERENCES app_users(username) ON DELETE CASCADE,
+        FOREIGN KEY (granted_by) REFERENCES app_users(username) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "decision_audit_actions": """CREATE TABLE IF NOT EXISTS decision_audit_actions (
+        audit_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        actor_user_id VARCHAR(32) NULL,
+        action VARCHAR(64) NOT NULL,
+        resource_type VARCHAR(64) NOT NULL,
+        resource_id VARCHAR(128) NULL,
+        outcome VARCHAR(32) NOT NULL,
+        metadata_json JSON NULL,
+        created_at DATETIME(6) NOT NULL,
+        INDEX idx_decision_audit_actor (actor_user_id, created_at),
+        INDEX idx_decision_audit_resource (resource_type, resource_id, created_at),
+        FOREIGN KEY (actor_user_id) REFERENCES app_users(username) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "procurement_decision_retention_holds": """CREATE TABLE IF NOT EXISTS procurement_decision_retention_holds (
+        hold_id CHAR(36) NOT NULL PRIMARY KEY,
+        decision_id VARCHAR(32) NOT NULL,
+        owner_user_id VARCHAR(32) NOT NULL,
+        reason VARCHAR(255) NOT NULL,
+        created_by VARCHAR(32) NOT NULL,
+        created_at DATETIME(6) NOT NULL,
+        released_at DATETIME(6) NULL,
+        INDEX idx_retention_hold_decision (decision_id, owner_user_id, released_at),
+        FOREIGN KEY (decision_id, owner_user_id)
+            REFERENCES procurement_decisions(decision_id, owner_user_id) ON DELETE RESTRICT,
+        FOREIGN KEY (created_by) REFERENCES app_users(username) ON DELETE RESTRICT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "procurement_decision_tombstones": """CREATE TABLE IF NOT EXISTS procurement_decision_tombstones (
+        decision_id VARCHAR(32) NOT NULL,
+        owner_user_id VARCHAR(32) NOT NULL,
+        policy_version VARCHAR(64) NOT NULL,
+        evidence_fingerprint CHAR(64) NOT NULL,
+        original_created_at DATETIME(6) NOT NULL,
+        purged_at DATETIME(6) NOT NULL,
+        purge_reason VARCHAR(255) NOT NULL,
+        PRIMARY KEY (decision_id, owner_user_id),
+        INDEX idx_tombstone_purged (purged_at),
+        FOREIGN KEY (decision_id, owner_user_id)
+            REFERENCES procurement_decisions(decision_id, owner_user_id) ON DELETE RESTRICT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "evaluation_suite_versions": """CREATE TABLE IF NOT EXISTS evaluation_suite_versions (
+        suite_id VARCHAR(64) NOT NULL,
+        version INT UNSIGNED NOT NULL,
+        owner_user_id VARCHAR(32) NOT NULL,
+        title VARCHAR(200) NOT NULL,
+        content_fingerprint CHAR(64) NOT NULL,
+        suite_json JSON NOT NULL,
+        published_at DATETIME(6) NOT NULL,
+        PRIMARY KEY (suite_id, version),
+        UNIQUE KEY uq_evaluation_suite_fingerprint (suite_id, content_fingerprint),
+        FOREIGN KEY (owner_user_id) REFERENCES app_users(username) ON DELETE RESTRICT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "evaluation_runs": """CREATE TABLE IF NOT EXISTS evaluation_runs (
+        run_id CHAR(36) NOT NULL PRIMARY KEY,
+        suite_id VARCHAR(64) NOT NULL,
+        suite_version INT UNSIGNED NOT NULL,
+        requested_by VARCHAR(32) NOT NULL,
+        execution_mode VARCHAR(32) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        manifest_json JSON NOT NULL,
+        result_json JSON NULL,
+        cancel_requested_at DATETIME(6) NULL,
+        lease_owner VARCHAR(128) NULL,
+        lease_expires_at DATETIME(6) NULL,
+        created_at DATETIME(6) NOT NULL,
+        started_at DATETIME(6) NULL,
+        finished_at DATETIME(6) NULL,
+        INDEX idx_evaluation_run_queue (status, created_at),
+        INDEX idx_evaluation_run_lease (status, lease_expires_at),
+        FOREIGN KEY (suite_id, suite_version) REFERENCES evaluation_suite_versions(suite_id, version),
+        FOREIGN KEY (requested_by) REFERENCES app_users(username) ON DELETE RESTRICT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "evaluation_cases": """CREATE TABLE IF NOT EXISTS evaluation_cases (
+        run_id CHAR(36) NOT NULL,
+        scenario_id VARCHAR(64) NOT NULL,
+        repetition INT UNSIGNED NOT NULL DEFAULT 1,
+        status VARCHAR(32) NOT NULL,
+        input_json JSON NOT NULL,
+        output_json JSON NULL,
+        diagnostic_json JSON NULL,
+        duration_ms BIGINT UNSIGNED NULL,
+        created_at DATETIME(6) NOT NULL,
+        finished_at DATETIME(6) NULL,
+        PRIMARY KEY (run_id, scenario_id, repetition),
+        FOREIGN KEY (run_id) REFERENCES evaluation_runs(run_id) ON DELETE RESTRICT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "evaluation_assertion_results": """CREATE TABLE IF NOT EXISTS evaluation_assertion_results (
+        run_id CHAR(36) NOT NULL,
+        scenario_id VARCHAR(64) NOT NULL,
+        repetition INT UNSIGNED NOT NULL DEFAULT 1,
+        assertion_index INT UNSIGNED NOT NULL,
+        assertion_type VARCHAR(64) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        expected_json JSON NULL,
+        actual_json JSON NULL,
+        diagnostic VARCHAR(1000) NULL,
+        PRIMARY KEY (run_id, scenario_id, repetition, assertion_index),
+        FOREIGN KEY (run_id, scenario_id, repetition)
+            REFERENCES evaluation_cases(run_id, scenario_id, repetition) ON DELETE RESTRICT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "evaluation_baselines": """CREATE TABLE IF NOT EXISTS evaluation_baselines (
+        suite_id VARCHAR(64) NOT NULL,
+        execution_mode VARCHAR(32) NOT NULL,
+        run_id CHAR(36) NOT NULL,
+        selected_by VARCHAR(32) NOT NULL,
+        selected_at DATETIME(6) NOT NULL,
+        PRIMARY KEY (suite_id, execution_mode),
+        UNIQUE KEY uq_evaluation_baseline_run (run_id),
+        FOREIGN KEY (run_id) REFERENCES evaluation_runs(run_id) ON DELETE RESTRICT,
+        FOREIGN KEY (selected_by) REFERENCES app_users(username) ON DELETE RESTRICT
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
+    "evaluation_audit_events": """CREATE TABLE IF NOT EXISTS evaluation_audit_events (
+        audit_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        actor_user_id VARCHAR(32) NULL,
+        action VARCHAR(64) NOT NULL,
+        resource_type VARCHAR(64) NOT NULL,
+        resource_id VARCHAR(128) NULL,
+        outcome VARCHAR(32) NOT NULL,
+        metadata_json JSON NULL,
+        created_at DATETIME(6) NOT NULL,
+        INDEX idx_evaluation_audit_resource (resource_type, resource_id, created_at),
+        FOREIGN KEY (actor_user_id) REFERENCES app_users(username) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin""",
 }
+
+
+async def _ensure_application_tables(cur):
+    """Create only missing application tables in dependency-safe order."""
+    for table_name, ddl in APPLICATION_DDL.items():
+        await _create_table_if_missing(cur, table_name, ddl)
 
 
 def _json_default(value):
@@ -207,9 +420,9 @@ class MySQLStorage:
                 saver = CompatibleAIOMySQLSaver(self.pool)
                 await saver.setup()
                 async with self.cursor() as cur:
-                    for table_name, ddl in APPLICATION_DDL.items():
-                        await _create_table_if_missing(cur, table_name, ddl)
+                    await _ensure_application_tables(cur)
                     await self._upgrade_application_schema(cur)
+                    await self._apply_bootstrap_capabilities(cur)
                 self._checkpointer = saver
             except BaseException:
                 await self.close()
@@ -230,6 +443,17 @@ class MySQLStorage:
         for name, ddl in additions.items():
             if name not in columns:
                 await cur.execute(ddl)
+
+    async def _apply_bootstrap_capabilities(self, cur):
+        for username, capabilities in bootstrap_grants_from_env().items():
+            for capability in capabilities:
+                await cur.execute(
+                    "INSERT INTO app_capability_grants "
+                    "(username,capability,granted_by,granted_at,revoked_at) "
+                    "SELECT username,%s,NULL,UTC_TIMESTAMP(6),NULL FROM app_users WHERE username=%s "
+                    "ON DUPLICATE KEY UPDATE revoked_at=NULL,granted_at=VALUES(granted_at)",
+                    (capability, username),
+                )
 
     async def close(self):
         self._checkpointer = None
@@ -470,6 +694,53 @@ class MySQLStorage:
     async def delete_auth_session(self, token_hash):
         async with self.cursor() as cur:
             await cur.execute("DELETE FROM auth_sessions WHERE token_hash = %s", (token_hash,))
+
+    async def grant_capability(self, username, capability, *, granted_by=None):
+        validate_capability(capability)
+        async with self.cursor(transaction=True) as cur:
+            await cur.execute(
+                "INSERT INTO app_capability_grants "
+                "(username,capability,granted_by,granted_at,revoked_at) "
+                "VALUES (%s,%s,%s,UTC_TIMESTAMP(6),NULL) "
+                "ON DUPLICATE KEY UPDATE granted_by=VALUES(granted_by),"
+                "granted_at=VALUES(granted_at),revoked_at=NULL",
+                (username, capability, granted_by),
+            )
+            await cur.execute(
+                "INSERT INTO decision_audit_actions "
+                "(actor_user_id,action,resource_type,resource_id,outcome,metadata_json,created_at) "
+                "VALUES (%s,'CAPABILITY_GRANT','USER',%s,'SUCCESS',JSON_OBJECT('capability',%s),"
+                "UTC_TIMESTAMP(6))",
+                (granted_by, username, capability),
+            )
+
+    async def revoke_capability(self, username, capability, *, revoked_by=None):
+        validate_capability(capability)
+        async with self.cursor(transaction=True) as cur:
+            await cur.execute(
+                "UPDATE app_capability_grants SET revoked_at=UTC_TIMESTAMP(6) "
+                "WHERE username=%s AND capability=%s AND revoked_at IS NULL",
+                (username, capability),
+            )
+            changed = cur.rowcount == 1
+            await cur.execute(
+                "INSERT INTO decision_audit_actions "
+                "(actor_user_id,action,resource_type,resource_id,outcome,metadata_json,created_at) "
+                "VALUES (%s,'CAPABILITY_REVOKE','USER',%s,%s,JSON_OBJECT('capability',%s),"
+                "UTC_TIMESTAMP(6))",
+                (revoked_by, username, "SUCCESS" if changed else "NOOP", capability),
+            )
+            return changed
+
+    async def has_capability(self, username, capability):
+        validate_capability(capability)
+        async with self.cursor() as cur:
+            await cur.execute(
+                "SELECT 1 FROM app_capability_grants "
+                "WHERE username=%s AND capability=%s AND revoked_at IS NULL",
+                (username, capability),
+            )
+            return await cur.fetchone() is not None
 
     async def register_thread(self, thread_id, user_id, project_id=None):
         if project_id is not None and not await self.project_belongs_to(project_id, user_id):

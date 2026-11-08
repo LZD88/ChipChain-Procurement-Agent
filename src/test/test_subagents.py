@@ -59,6 +59,9 @@ class SubagentTests(unittest.IsolatedAsyncioTestCase):
         tracing_patch = patch.dict(os.environ, {"LANGSMITH_TRACING": "false", "LANGCHAIN_TRACING_V2": "false"})
         tracing_patch.start()
         self.addCleanup(tracing_patch.stop)
+        signing_patch = patch.dict(os.environ, {"MCP_INVOCATION_SIGNING_SECRET": "test-secret-that-is-at-least-32-bytes"})
+        signing_patch.start()
+        self.addCleanup(signing_patch.stop)
 
     def patch(self, name, *args, **kwargs):
         patcher = patch.object(main_agent, name, *args, **kwargs)
@@ -67,9 +70,14 @@ class SubagentTests(unittest.IsolatedAsyncioTestCase):
         return result
 
     def make_tool(self, name):
-        def execute() -> str:
-            self.executed.append(name)
-            return "操作成功"
+        if name in {"procurement_compare", "order_create"}:
+            def execute(invocation_envelope: dict) -> str:
+                self.executed.append(name)
+                return "操作成功"
+        else:
+            def execute() -> str:
+                self.executed.append(name)
+                return "操作成功"
         return StructuredTool.from_function(execute, name=name, description="离线测试工具")
 
     async def create_graph(self, user_id="test-user"):
@@ -101,7 +109,11 @@ class SubagentTests(unittest.IsolatedAsyncioTestCase):
             bound = {tool.name: tool for tool in subagent["tools"]}
             self.assertFalse(any(name.endswith("_debug") for name in bound))
             for name in bound.keys() & self.tools.keys():
-                self.assertIs(bound[name], self.tools[name])
+                if name in {"procurement_compare", "order_create"}:
+                    self.assertIsNot(bound[name], self.tools[name])
+                    self.assertNotIn("invocation_envelope", bound[name].tool_call_schema.model_fields)
+                else:
+                    self.assertIs(bound[name], self.tools[name])
         self.assertNotIn("order_create", {tool.name for tool in analyst["tools"]})
         self.assertNotIn("order_update", {tool.name for tool in analyst["tools"]})
         self.assertIn("task", graph.nodes["tools"].bound.tools_by_name)

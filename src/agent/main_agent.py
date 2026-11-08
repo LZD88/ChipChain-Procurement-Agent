@@ -68,6 +68,7 @@ from agent.tools.assign_skill import create_assign_skill_tool
 from agent.tools.download_sandbox_file import create_download_tool
 from agent.tools.mcp_client import load_mcp_tools
 from agent.tools.web_search import web_search
+from agent.tools.scoped_mcp import wrap_signed_mcp_tool
 
 
 logger = logging.getLogger(__name__)
@@ -160,10 +161,13 @@ async def create_main_agent(
     download_sandbox_file = create_download_tool(sandbox_backend, DOWNLOAD_DIR)
 
     # ---- Phase 3: 直接定义子 Agent，按完整名称绑定 MCP 工具对象 ----
-    mcp_tools = {
-        tool.name: tool
-        for tool in [*precomputed.analyst_mcp_tools, *precomputed.order_mcp_tools]
-    }
+    mcp_tools = {}
+    for tool in [*precomputed.analyst_mcp_tools, *precomputed.order_mcp_tools]:
+        mcp_tools[tool.name] = (
+            wrap_signed_mcp_tool(tool)
+            if tool.name in {"procurement_compare", "order_create"}
+            else tool
+        )
     procurement_analyst: SubAgent = {
         "name": "procurement-analyst",
         "description": (

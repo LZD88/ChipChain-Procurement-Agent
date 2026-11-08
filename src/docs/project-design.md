@@ -213,7 +213,21 @@ MultiServerMCPClient 启动时分别连接 ERP MCP 和图表 MCP，按 supplier_
 
 ANALYSIS_MCP_URL 为必填配置。现有启动流程要求完成工具加载，尚未实现图表服务不可用时自动进入纯查询模式。
 
-### 5.3 统一图表入口
+### 5.3 版本化采购策略与规范化证据
+
+`procurement_compare` 的 ERP 查询仍位于 MCP 适配层，但评分、硬约束、稳定排序和推荐结果已抽取到无网络、无数据库副作用的 `src/agent/policies/procurement.py`。在线工具、后续证据回放和离线评测必须复用同一个策略实现，不能复制一份相似的评分逻辑。当前策略标识为 `supplier-score-v1`。
+
+`src/agent/policies/registry.py` 按完整版本号登记策略，并明确记录是否支持回放。查询未知、已退役或不可回放的版本会返回不同错误，不会静默替换为当前版本。决策或评测基线登记引用后，该策略版本不能退役；只有解除全部引用后才能执行退役操作。
+
+`src/agent/policies/canonical.py` 定义 `procurement-json-v1` 规范化协议：对象键按 JSON 规则排序，Unicode 直接以 UTF-8 表达，null 保持 null，Decimal 与浮点数转成有限的规范十进制字符串。来源中的物料候选属于无序事实，按稳定业务标识排序；结果中的候选顺序代表策略排名，必须保留。完整证据指纹覆盖规范化版本、策略版本、请求、来源事实和结果，使用完整 SHA-256 保存，并可由其前 16 个十六进制字符生成展示用决策号。
+
+验证命令：
+
+```shell
+python -m pytest -q src/test/test_procurement_compare.py src/test/test_policy_equivalence.py src/test/test_policy_canonical.py src/test/test_policy_registry.py
+```
+
+### 5.4 统一图表入口
 
 图表适配器将 26 种已识别图表组织为比较、趋势、分布、指标、层级、关系、地图七类，对模型暴露一个 generate_chart(chart_type, chart_config) 入口。
 
@@ -282,6 +296,22 @@ CompositeBackend 将 /memories/ 和 /persisted-skills/ 分流到 StoreBackend，
 | chat_threads | thread_id | 会话所属用户 |
 | session_display_messages | thread_id + message_index | 用于 UI 还原的逐条 JSON 消息 |
 | sandbox_registry | user_id | OpenSandbox ID 与绑定时间 |
+
+决策证据中心另外使用 `procurement_decisions`、`procurement_decision_events`、
+`procurement_decision_claims`、`procurement_replays`、`app_capability_grants`、
+`decision_audit_actions`、`procurement_decision_retention_holds` 和
+`procurement_decision_tombstones`。证据列表依赖 owner/time 索引，claim 对决策、
+claim token 和幂等键施加唯一约束。部署时 MCP 与评测 worker 应使用独立最小权限数据库账号。
+
+版本化评测另外使用 `evaluation_suite_versions`、`evaluation_runs`、`evaluation_cases`、
+`evaluation_assertion_results`、`evaluation_baselines` 和 `evaluation_audit_events`。套件版本按
+suite/version 唯一且不可原地修改；worker 通过 runs 表的 lease 原子领取任务，场景与断言结果
+增量写入，基线按 suite/execution-mode 唯一，发布、运行、取消、基线和导出动作写入独立审计表。
+
+窄权限仅包含 `decision:audit`、`evaluation:view`、`evaluation:maintain`；
+`APP_CAPABILITY_BOOTSTRAP` 为空即 deny-by-default。`DECISION_EVIDENCE_RETENTION_DAYS`
+控制详细载荷保留期，活动 hold 会阻止清理。清理先写 tombstone 再清空 JSON；备份与恢复必须
+把决策、事件、claim、回放、授权、hold 与 tombstone 作为一个一致性单元，恢复后验证外键和指纹。
 
 检查点与展示消息用途不同：前者供运行框架恢复任务，后者供 UI 保留主子 Agent 来源、工具参数、文本与图片等显示信息。不能直接把 checkpoint_blobs 当作普通聊天 JSON 编辑。
 
@@ -439,7 +469,11 @@ MySQL checkpoint 保留任务执行状态，展示表保存适合用户阅读的
 
 工作台按用户问题聚合结果，把中间执行细节收进展开区域，图表仍可直接展示。用户可以先读结论，再查看工具参数、数据结果和人工确认过程。
 
-这些亮点来自结构与能力设计；当前没有足够实测数据支持宣称固定的成本降幅、准确率提升或并发吞吐。
+这些亮点主要来自结构与能力设计。当前仅有默认冻结 fixture 的离线评测证据：
+[硬约束断言 10/10、期望推荐 3/3、规则场景 6/6](../../docs/evaluation-results/rule-baseline.md)，以及
+[workflow-safety 的危险写入断言 12/12、审批边界 6/6、场景 12/12](../../docs/evaluation-results/workflow-safety.md)；
+原始导出和复现命令见项目 README 的“可复现评测结果”。这些数字不支持宣称线上准确率、
+实际采购节省、生产吞吐或业务 ROI。
 
 ## 12 模块与代码组织
 

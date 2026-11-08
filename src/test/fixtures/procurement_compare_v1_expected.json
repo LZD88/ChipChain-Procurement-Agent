@@ -1,0 +1,16 @@
+{
+  "decisionId": "DEC-EA644DEB260C758B",
+  "policyVersion": "supplier-score-v1",
+  "recommendedPartId": 24,
+  "recommendedSupplierId": 1,
+  "minimumFeasibleBudget": null,
+  "candidateOrder": [24, 23],
+  "candidateScores": [97.42, 89.58],
+  "candidateAmounts": [8530.0, 7900.0],
+  "scoreWeights": {
+    "price": 35,
+    "leadTime": 25,
+    "credit": 25,
+    "inventoryMoq": 15
+  }
+}

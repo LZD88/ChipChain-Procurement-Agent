@@ -1,0 +1,47 @@
+{
+  "successful-recommendation": {
+    "request": {"partName": "传感器", "quantity": 10, "budget": 1500, "maxLeadTimeDays": 14},
+    "parts": [{"id": 1, "partCode": "P1", "name": "传感器", "model": "A", "purchasePrice": 100, "supplierId": 1, "minOrderQuantity": 5, "leadTimeDays": 7}],
+    "suppliers": {"1": {"id": 1, "name": "供应商一", "creditRating": "A", "status": 1}},
+    "inventories": {"1": {"partId": 1, "currentQuantity": 20, "safetyStock": 5, "warehouseLocation": "A1"}}
+  },
+  "budget-no-solution": {
+    "request": {"partName": "传感器", "quantity": 10, "budget": 500, "maxLeadTimeDays": 14},
+    "parts": [{"id": 1, "partCode": "P1", "name": "传感器", "model": "A", "purchasePrice": 100, "supplierId": 1, "minOrderQuantity": 5, "leadTimeDays": 7}],
+    "suppliers": {"1": {"id": 1, "name": "供应商一", "creditRating": "A", "status": 1}},
+    "inventories": {"1": {"partId": 1, "currentQuantity": 20, "safetyStock": 5}}
+  },
+  "moq-violation": {
+    "request": {"partName": "传感器", "quantity": 5, "budget": null, "maxLeadTimeDays": null},
+    "parts": [{"id": 1, "partCode": "P1", "name": "传感器", "model": "A", "purchasePrice": 100, "supplierId": 1, "minOrderQuantity": 10, "leadTimeDays": 7}],
+    "suppliers": {"1": {"id": 1, "name": "供应商一", "creditRating": "A", "status": 1}},
+    "inventories": {"1": {"partId": 1, "currentQuantity": 20, "safetyStock": 5}}
+  },
+  "inactive-supplier": {
+    "request": {"partName": "传感器", "quantity": 10, "budget": null, "maxLeadTimeDays": null},
+    "parts": [{"id": 1, "partCode": "P1", "name": "传感器", "model": "A", "purchasePrice": 100, "supplierId": 1, "minOrderQuantity": 5, "leadTimeDays": 7}],
+    "suppliers": {"1": {"id": 1, "name": "供应商一", "creditRating": "A", "status": 0}},
+    "inventories": {"1": {"partId": 1, "currentQuantity": 20, "safetyStock": 5}}
+  },
+  "missing-source-data": {
+    "request": {"partName": "传感器", "quantity": 10, "budget": null, "maxLeadTimeDays": null},
+    "parts": [{"id": 1, "partCode": "P1", "name": "传感器", "model": "A", "purchasePrice": 100, "supplierId": 1, "minOrderQuantity": 5, "leadTimeDays": 7}],
+    "suppliers": {},
+    "inventories": {"1": {"partId": 1, "currentQuantity": 20, "safetyStock": 5}}
+  },
+  "deterministic-tie-breaking": {
+    "request": {"partName": "传感器", "quantity": 10, "budget": null, "maxLeadTimeDays": null},
+    "parts": [
+      {"id": 2, "partCode": "P2", "name": "传感器", "model": "A", "purchasePrice": 100, "supplierId": 2, "minOrderQuantity": 5, "leadTimeDays": 7},
+      {"id": 1, "partCode": "P1", "name": "传感器", "model": "A", "purchasePrice": 100, "supplierId": 1, "minOrderQuantity": 5, "leadTimeDays": 7}
+    ],
+    "suppliers": {
+      "1": {"id": 1, "name": "供应商一", "creditRating": "A", "status": 1},
+      "2": {"id": 2, "name": "供应商二", "creditRating": "A", "status": 1}
+    },
+    "inventories": {
+      "1": {"partId": 1, "currentQuantity": 20, "safetyStock": 5},
+      "2": {"partId": 2, "currentQuantity": 20, "safetyStock": 5}
+    }
+  }
+}

@@ -68,6 +68,7 @@
         ><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16M6 8h.01M6 11h.01"/></svg></button>
         <div class="workspace-title"><span v-if="activeProject" class="workspace-project">{{ activeProject.name }}<span aria-hidden="true">/</span></span><strong :title="activeSession?.title || '新会话'">{{ activeSession?.title || '新会话' }}</strong></div>
         <button class="workspace-icon-button header-new-chat" type="button" aria-label="新建会话" title="新建会话" @click="handleNewChat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-7M16 3h5v5M11 13 21 3"/></svg></button>
+        <button class="evidence-button" type="button" @click="openEvidence">决策证据</button>
       </header>
       <!-- 对话区域 -->
       <ChatArea
@@ -103,6 +104,7 @@
         :project-name="activeProject?.name || ''"
       />
     </main>
+    <DecisionEvidencePanel v-if="evidenceDecisionId" :decision-id="evidenceDecisionId" @close="evidenceDecisionId = ''" />
   </div>
 </template>
 
@@ -113,6 +115,7 @@ import Sidebar from './components/Sidebar.vue'
 import ChatArea from './components/ChatArea.vue'
 import InputArea from './components/InputArea.vue'
 import InterruptBanner from './components/InterruptBanner.vue'
+import DecisionEvidencePanel from './components/DecisionEvidencePanel.vue'
 import { streamChat, resumeChat } from './api/chat.js'
 import {
   getSessions, getMessages, deleteSession, updateSession, getProjects, createProject, updateProject, deleteProject
@@ -139,6 +142,11 @@ const sessions = ref([])
 const projects = ref([])
 const pendingProjectId = ref(null)
 const inputAreaRef = ref(null)
+const evidenceDecisionId = ref('')
+function openEvidence() {
+  const decisionId = window.prompt('输入要查看的决策 ID')?.trim()
+  if (decisionId) evidenceDecisionId.value = decisionId
+}
 // 每个会话持有自己的消息、请求、审批和输入草稿。
 const conversationStore = createConversations({ streamChat, resumeChat, getMessages, onSessionsChanged: loadSessions })
 const currentConversation = conversationStore.current
@@ -465,6 +473,7 @@ function handleResume(data) { return conversationStore.resume(data) }
 .workspace-icon-button:focus-visible { outline: 2px solid #a56b4e; outline-offset: 2px; }
 .workspace-icon-button svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .header-new-chat { margin-left: auto; }
+.evidence-button { border: 1px solid #c8b8aa; border-radius: 8px; background: #fffaf4; color: #76523f; padding: 7px 10px; cursor: pointer; font-size: 12px; }
 .sidebar-backdrop { display: none; }
 :global(html.resizing-sidebar), :global(html.resizing-sidebar *) { cursor: col-resize !important; user-select: none !important; }
 @media (max-width: 760px) {

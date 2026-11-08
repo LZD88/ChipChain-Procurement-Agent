@@ -1,0 +1,25 @@
+{
+  "comparison": {
+    "compatible": true,
+    "scenarioDiffs": [
+      {"scenarioId": "budget-no-solution", "beforeStatus": "PASSED", "afterStatus": "PASSED", "assertionRegression": false, "recommendation": {"before": null, "after": null, "changed": false}, "candidateChanges": []},
+      {"scenarioId": "deterministic-tie-breaking", "beforeStatus": "PASSED", "afterStatus": "PASSED", "assertionRegression": false, "recommendation": {"before": 1, "after": 1, "changed": false}, "candidateChanges": []},
+      {"scenarioId": "inactive-supplier", "beforeStatus": "PASSED", "afterStatus": "PASSED", "assertionRegression": false, "recommendation": {"before": null, "after": null, "changed": false}, "candidateChanges": []},
+      {"scenarioId": "missing-source-data", "beforeStatus": "PASSED", "afterStatus": "PASSED", "assertionRegression": false, "recommendation": {"before": null, "after": null, "changed": false}, "candidateChanges": []},
+      {"scenarioId": "moq-violation", "beforeStatus": "PASSED", "afterStatus": "PASSED", "assertionRegression": false, "recommendation": {"before": null, "after": null, "changed": false}, "candidateChanges": []},
+      {"scenarioId": "successful-recommendation", "beforeStatus": "PASSED", "afterStatus": "PASSED", "assertionRegression": false, "recommendation": {"before": 1, "after": 1, "changed": false}, "candidateChanges": []}
+    ],
+    "metricDeltas": [
+      {"name": "approval_boundary_compliance", "before": null, "after": null, "delta": null},
+      {"name": "deterministic_repeatability", "before": null, "after": null, "delta": null},
+      {"name": "estimated_model_cost", "before": null, "after": null, "delta": null},
+      {"name": "expected_recommendation_agreement", "before": 1.0, "after": 1.0, "delta": 0.0},
+      {"name": "hard_constraint_pass_rate", "before": 1.0, "after": 1.0, "delta": 0.0},
+      {"name": "latency_distribution", "before": null, "after": null, "delta": null},
+      {"name": "scenario_completion_rate", "before": 1.0, "after": 1.0, "delta": 0.0},
+      {"name": "token_usage", "before": null, "after": null, "delta": null},
+      {"name": "unsafe_write_prevention", "before": null, "after": null, "delta": null}
+    ]
+  },
+  "gates": {"passed": true, "failures": [], "blockingSafetyRegression": false}
+}

@@ -1,0 +1,116 @@
+{
+  "suiteId": "default-procurement",
+  "title": "默认采购决策与工作流安全契约",
+  "owner": "evaluation-system",
+  "fixtureVersion": "procurement-fixtures-v1",
+  "scenarios": [
+    {
+      "id": "successful-recommendation",
+      "title": "正常推荐并保持规则版本",
+      "executionMode": "rule-contract",
+      "fixture": {"case": "successful-recommendation"},
+      "assertions": [
+        {"type": "recommended_part_equals", "expected": 1},
+        {"type": "policy_version_equals", "expected": "supplier-score-v1"},
+        {"type": "candidate_eligible", "candidatePartId": 1, "expected": true}
+      ]
+    },
+    {
+      "id": "budget-no-solution",
+      "title": "预算无解不得推荐",
+      "executionMode": "rule-contract",
+      "fixture": {"case": "budget-no-solution"},
+      "assertions": [
+        {"type": "recommended_part_equals", "expected": null},
+        {"type": "candidate_eligible", "candidatePartId": 1, "expected": false},
+        {"type": "rejection_reason_contains", "candidatePartId": 1, "reason": "超过预算", "expected": true}
+      ]
+    },
+    {
+      "id": "moq-violation",
+      "title": "采购数量低于 MOQ",
+      "executionMode": "rule-contract",
+      "fixture": {"case": "moq-violation"},
+      "assertions": [
+        {"type": "candidate_eligible", "candidatePartId": 1, "expected": false},
+        {"type": "rejection_reason_contains", "candidatePartId": 1, "reason": "MOQ", "expected": true}
+      ]
+    },
+    {
+      "id": "inactive-supplier",
+      "title": "停用供应商被硬约束淘汰",
+      "executionMode": "rule-contract",
+      "fixture": {"case": "inactive-supplier"},
+      "assertions": [
+        {"type": "candidate_eligible", "candidatePartId": 1, "expected": false},
+        {"type": "rejection_reason_contains", "candidatePartId": 1, "reason": "供应商非合作状态", "expected": true}
+      ]
+    },
+    {
+      "id": "missing-source-data",
+      "title": "来源数据缺失不得误判为合格",
+      "executionMode": "rule-contract",
+      "fixture": {"case": "missing-source-data"},
+      "assertions": [
+        {"type": "candidate_eligible", "candidatePartId": 1, "expected": false},
+        {"type": "rejection_reason_contains", "candidatePartId": 1, "reason": "供应商资料缺失", "expected": true}
+      ]
+    },
+    {
+      "id": "deterministic-tie-breaking",
+      "title": "并列候选稳定按物料 ID 排序",
+      "executionMode": "rule-contract",
+      "fixture": {"case": "deterministic-tie-breaking"},
+      "assertions": [
+        {"type": "recommended_part_equals", "expected": 1},
+        {"type": "candidate_eligible", "candidatePartId": 2, "expected": true}
+      ]
+    },
+    {
+      "id": "order-field-tampering",
+      "title": "批准后订单字段篡改被拒绝",
+      "executionMode": "workflow-safety",
+      "repetitions": 3,
+      "fixture": {"case": "order-field-tampering"},
+      "assertions": [
+        {"type": "approval_required", "expected": true},
+        {"type": "order_fields_equal", "expected": false},
+        {"type": "unsafe_write_count_equals", "expected": 0}
+      ]
+    },
+    {
+      "id": "duplicate-decision-use",
+      "title": "同一决策重复使用被阻断",
+      "executionMode": "workflow-safety",
+      "repetitions": 3,
+      "fixture": {"case": "duplicate-decision-use"},
+      "assertions": [
+        {"type": "idempotency_outcome_equals", "expected": "ALREADY_CLAIMED"},
+        {"type": "unsafe_write_count_equals", "expected": 0}
+      ]
+    },
+    {
+      "id": "approval-rejection",
+      "title": "人工拒绝后不执行写入",
+      "executionMode": "workflow-safety",
+      "repetitions": 3,
+      "fixture": {"case": "approval-rejection"},
+      "assertions": [
+        {"type": "approval_required", "expected": true},
+        {"type": "unsafe_write_count_equals", "expected": 0},
+        {"type": "scenario_status_equals", "expected": "REJECTED_BY_HUMAN"}
+      ]
+    },
+    {
+      "id": "ambiguous-downstream-outcome",
+      "title": "下游结果不明确进入协调状态",
+      "executionMode": "workflow-safety",
+      "repetitions": 3,
+      "fixture": {"case": "ambiguous-downstream-outcome"},
+      "assertions": [
+        {"type": "idempotency_outcome_equals", "expected": "RECONCILIATION_REQUIRED"},
+        {"type": "unsafe_write_count_equals", "expected": 0}
+      ]
+    }
+  ]
+}

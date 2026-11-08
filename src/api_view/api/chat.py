@@ -10,6 +10,7 @@ import uuid
 import re
 import os
 import tempfile
+import hashlib
 from contextlib import aclosing
 from datetime import datetime
 from typing import AsyncIterator
@@ -28,6 +29,7 @@ from agent.schema import (
 from api_view.agent_loader import agent_loader
 from api_view.auth import require_same_origin_request, require_thread, require_user
 from agent.mysql_storage import mysql_storage
+from agent.decision_repository import DecisionRepository
 from agent.input_guard import InputSafetyError, get_input_guard
 from api_view.observability import StreamObservation
 
@@ -257,6 +259,93 @@ class ResumeRequest(BaseModel):
     model_config = {"extra": "forbid"}
 
 
+def _approval_action(action: dict, thread_id: str, index: int) -> dict | None:
+    if action.get("name") != "order_create":
+        return None
+    arguments = action.get("args") or action.get("arguments") or {}
+    if not isinstance(arguments, dict):
+        return None
+    decision_id = arguments.get("decision_id") or arguments.get("decisionId")
+    if not isinstance(decision_id, str) or not decision_id.startswith("DEC-"):
+        return None
+    identity = json.dumps(
+        {"thread": thread_id, "index": index, "action": action.get("id"), "decision": decision_id},
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    approval_id = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:32]
+    return {"approval_id": approval_id, "decision_id": decision_id}
+
+
+async def record_hitl_approval_requests(
+    repository: DecisionRepository,
+    *,
+    thread_id: str,
+    user_id: str,
+    action_requests: list[dict],
+) -> int:
+    """Persist owner-scoped approval requests before exposing the approval UI."""
+    recorded = 0
+    for index, action in enumerate(action_requests):
+        approval = _approval_action(action, thread_id, index)
+        if approval is None:
+            continue
+        evidence = await repository.get_for_owner(approval["decision_id"], user_id)
+        if evidence is None or evidence.get("thread_id") != thread_id:
+            raise RuntimeError("订单审批引用的采购决策不属于当前会话")
+        await repository.append_event(
+            approval["decision_id"],
+            user_id,
+            "APPROVAL_REQUESTED",
+            actor_user_id=user_id,
+            event_key=f"approval-request:{approval['approval_id']}",
+            payload={
+                "approvalRequestId": approval["approval_id"],
+                "threadId": thread_id,
+                "action": "order_create",
+            },
+        )
+        recorded += 1
+    return recorded
+
+
+async def record_hitl_resume_events(
+    repository: DecisionRepository,
+    *,
+    thread_id: str,
+    user_id: str,
+    decisions: list[dict],
+) -> None:
+    """Atomically de-duplicate approval/rejection audit events at the evidence boundary."""
+    pending = await repository.pending_approvals_for_thread(
+        thread_id,
+        user_id,
+        limit=max(1, len(decisions)),
+    )
+    if len(pending) != len(decisions):
+        raise ValueError("审批请求不存在、已处理或与恢复数据不匹配")
+    for approval, decision in zip(pending, decisions, strict=True):
+        approval_id = (approval.get("payload") or {}).get("approvalRequestId")
+        if not approval_id:
+            raise ValueError("审批请求缺少可验证标识")
+        decision_type = decision["type"]
+        appended = await repository.append_event(
+            approval["decision_id"],
+            user_id,
+            "APPROVED" if decision_type == "approve" else "REJECTED",
+            actor_user_id=user_id,
+            event_key=f"approval-resolution:{approval_id}",
+            payload={
+                "approvalRequestId": approval_id,
+                "threadId": thread_id,
+                "decision": decision_type,
+            },
+        )
+        if not appended:
+            raise ValueError("审批请求已处理，不允许重复恢复")
+
+
 # ============================================================
 # 流式对话核心逻辑
 # ============================================================
@@ -407,6 +496,12 @@ async def stream_chat_response(
 
                     if "action_requests" in interrupt_value:
                         # ---- 第 2 层：HITL 审批中断（interrupt_on 配置）----
+                        await record_hitl_approval_requests(
+                            DecisionRepository(mysql_storage),
+                            thread_id=thread_id,
+                            user_id=user_id,
+                            action_requests=interrupt_value["action_requests"],
+                        )
                         yield create_sse_message({
                             "type": "interrupt",
                             "interrupt_type": "hitl_approval",
@@ -767,6 +862,18 @@ async def chat_resume(thread_id: str, request: ResumeRequest, user_id: str = Dep
         await get_input_guard().check_resume(request.resume, user_id=user_id)
     except InputSafetyError as exc:
         raise HTTPException(exc.status_code, detail={"code": exc.code, "message": exc.message}) from None
+
+    decisions = request.resume.get("decisions")
+    if decisions is not None:
+        try:
+            await record_hitl_resume_events(
+                DecisionRepository(mysql_storage),
+                thread_id=thread_id,
+                user_id=user_id,
+                decisions=decisions,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from None
 
     return StreamingResponse(
         stream_chat_response(thread_id=thread_id, resume_data=request.resume, user_id=user_id),

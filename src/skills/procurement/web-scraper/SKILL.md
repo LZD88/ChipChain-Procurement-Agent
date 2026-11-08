@@ -1,6 +1,6 @@
 ---
 name: web-scraper
-description: "网页抓取工具 | 从沙箱内直接发起 HTTP 请求获取网页内容，解析 HTML 并转换为干净的 Markdown 文件保存到 /analysis/temp/。支持内网 URL（如 http://host.docker.internal:8082/...）。触发词：抓取网页、网页转markdown、爬取内容、保存网页、scrape webpage、fetch and save"
+description: "网页抓取工具 | 从沙箱内直接发起 HTTP 请求获取网页内容，解析 HTML 并转换为干净的 Markdown 文件保存到 /analysis/temp/。支持通过部署配置访问内网 URL。触发词：抓取网页、网页转markdown、爬取内容、保存网页、scrape webpage、fetch and save"
 author: Boss
 metadata:
   openclaw:
@@ -12,11 +12,11 @@ metadata:
 
 从沙箱内直接发起 HTTP 请求，解析 HTML 并转换为 Markdown 保存。不依赖任何外部代理服务，可直接访问内网 URL。
 
-沙箱内的 `localhost` / `127.0.0.1` 指向沙箱自身。当前 Docker Desktop 部署中，访问宿主机上的报价服务应使用 `http://host.docker.internal:8082`；沙箱内本地端口连接失败不能据此判断宿主机服务未启动。
+沙箱内的 `localhost` / `127.0.0.1` 指向沙箱自身。当前默认使用 VirtualBox/OpenSandbox 虚拟机，不要依赖 Docker Desktop 专用的 `host.docker.internal`；访问宿主机报价服务时应使用部署配置提供的可达地址。沙箱内本地端口连接失败不能据此判断宿主机服务未启动。
 
 ## 适用场景
 
-- 抓取内网页面（如 `http://host.docker.internal:8082/...`），外部代理服务无法访问
+- 抓取虚拟机可达的内网页面，外部代理服务无法访问
 - 需要将网页内容保存为 Markdown 文件供后续分析
 - 批量抓取产品/供应商页面
 
@@ -25,11 +25,11 @@ metadata:
 ```bash
 # 基本用法（自动生成输出文件名）
 python /skills/procurement/web-scraper/scrape_page.py \
-  --url "http://host.docker.internal:8082/quotes/LAB-SNS-11-02.html"
+  --url "$ERP_REACHABLE_BASE_URL/quotes/LAB-SNS-11-02.html"
 
 # 指定输出路径
 python /skills/procurement/web-scraper/scrape_page.py \
-  --url "http://host.docker.internal:8082/quotes/LAB-SNS-11-02.html" \
+  --url "$ERP_REACHABLE_BASE_URL/quotes/LAB-SNS-11-02.html" \
   --output "/analysis/temp/quotes/LAB-SNS-11-02.md"
 ```
 
@@ -50,7 +50,7 @@ python /skills/procurement/web-scraper/scrape_page.py \
 ## 示例
 
 ```
-用户: 帮我抓取http://host.docker.internal:8082/quotes/LAB-SNS-11-02.html 的内容并保存
+用户: 帮我抓取部署配置中的 ERP 报价页 `/quotes/LAB-SNS-11-02.html` 并保存
 助手: (执行 python scrape_page.py --url "...") → 保存到 /analysis/temp/quotes/LAB-SNS-11-02.md
 ```
 

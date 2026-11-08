@@ -14,7 +14,7 @@ from fastapi.responses import Response as RawResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from fastapi.middleware.cors import CORSMiddleware
 
-from api_view.api import auth, chat, history
+from api_view.api import auth, chat, decisions, evaluations, history
 from api_view.agent_loader import agent_loader
 from agent.logging_config import configure_logging
 from api_view.observability import configure_opentelemetry
@@ -75,6 +75,8 @@ app.include_router(auth.router, prefix="/api", tags=["账号"])
 app.include_router(chat.router, prefix="/api", tags=["对话"])
 # 历史记录相关接口
 app.include_router(history.router, prefix="/api", tags=["历史记录"])
+app.include_router(decisions.router, prefix="/api", tags=["决策证据"])
+app.include_router(evaluations.router, prefix="/api", tags=["决策评测"])
 
 
 # ============================================================

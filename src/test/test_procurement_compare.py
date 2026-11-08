@@ -5,9 +5,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from mcp_server.tools.procurement_tools import (
-    _DECISIONS, compare_candidates, consume_decision, remember_decision, validate_decision,
-)
+from mcp_server.tools.procurement_tools import compare_candidates
 
 
 PARTS = [
@@ -70,20 +68,6 @@ class ProcurementCompareTests(unittest.TestCase):
         inventories = {31: INVENTORIES[23], 32: INVENTORIES[23]}
         result = self.compare(parts=tied, inventories=inventories, budget=None)
         self.assertEqual([item["partId"] for item in result["candidates"]], [31, 32])
-
-    def test_decision_snapshot_binds_order_and_prevents_replay(self):
-        result = self.compare()
-        remember_decision(result)
-        detail = [{"partId": 24, "quantity": 500, "unitPrice": 17.06}]
-        self.assertIsNone(validate_decision(result["decisionId"], result["policyVersion"], detail))
-        self.assertIn("不一致", validate_decision(
-            result["decisionId"], result["policyVersion"],
-            [{"partId": 24, "quantity": 500, "unitPrice": 1.00}],
-        ))
-        consume_decision(result["decisionId"])
-        self.assertIn("重复使用", validate_decision(result["decisionId"], result["policyVersion"], detail))
-        _DECISIONS.pop(result["decisionId"], None)
-
 
 if __name__ == "__main__":
     unittest.main()

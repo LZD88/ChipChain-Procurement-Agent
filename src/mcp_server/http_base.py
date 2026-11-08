@@ -8,6 +8,8 @@ import httpx
 from fastmcp import FastMCP
 
 from agent.env_utils import JAVA_API_BASE_URL, JAVA_API_USERNAME, JAVA_API_PASSWORD
+from agent.invocation_context import NonceReplayGuard
+from mcp_server.decision_db import create_decision_storage
 
 logger = logging.getLogger(__name__)
 
@@ -118,10 +120,16 @@ async def mcp_lifespan(server: FastMCP):
         password=JAVA_API_PASSWORD,
     )
     await http_client._login()
+    decision_storage = await create_decision_storage()
+    invocation_replay_guard = NonceReplayGuard()
     # 将 http_client 存入 lifespan_context，供工具函数通过 ctx 获取
     try:
         # 将 http_client 存入 lifespan_context，供工具函数通过 ctx 获取
-        yield {"http_client": http_client}
+        yield {
+            "http_client": http_client,
+            "decision_storage": decision_storage,
+            "invocation_replay_guard": invocation_replay_guard,
+        }
     finally:
         # 关闭时清理资源
         try:
@@ -129,3 +137,4 @@ async def mcp_lifespan(server: FastMCP):
         except Exception:
             # 记录日志但不向上抛，避免遮蔽 yield 期间的真实业务异常
             logger.exception("关闭 HTTP 客户端时发生异常")
+        await decision_storage.close()
