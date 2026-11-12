@@ -170,6 +170,9 @@ class OpenSandboxBackend(BaseSandbox):
             # 与 sandbox_manager 检测到沙箱已失效并触发重建。
             raise
         except Exception as e:
+            from agent.backends.sandbox_healthcheck import invalidate_health, is_infrastructure_error
+            if is_infrastructure_error(e):
+                invalidate_health(self)
             return self._build_error_response(e, timeout)
 
     async def adownload_files(self, paths: list[str]) -> list[FileDownloadResponse]:
@@ -195,7 +198,10 @@ class OpenSandboxBackend(BaseSandbox):
                 responses.append(
                     FileDownloadResponse(path=path, content=content, error=None)
                 )
-            except Exception:
+            except Exception as exc:
+                from agent.backends.sandbox_healthcheck import invalidate_health, is_infrastructure_error
+                if is_infrastructure_error(exc):
+                    invalidate_health(self)
                 responses.append(
                     FileDownloadResponse(path=path, content=None, error="file_not_found")
                 )
@@ -240,6 +246,9 @@ class OpenSandboxBackend(BaseSandbox):
                 raise
             except Exception as e:
                 # 其他写失败：将所有成功准备但未真正上传的条目标记为错误
+                from agent.backends.sandbox_healthcheck import invalidate_health, is_infrastructure_error
+                if is_infrastructure_error(e):
+                    invalidate_health(self)
                 for resp in responses:
                     if resp.error is None:
                         resp.error = f"upload_failed: {e}"

@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import os
 import time
+import asyncio
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 from prometheus_client import Counter, Gauge, Histogram
@@ -19,6 +21,54 @@ TOOL_CALLS = Counter("agent_tool_calls_total", "工具调用数", ("tool", "stat
 LLM_INPUT_TOKENS = Counter("agent_llm_input_tokens_total", "LLM 输入 Token", ("model",))
 LLM_OUTPUT_TOKENS = Counter("agent_llm_output_tokens_total", "LLM 输出 Token", ("model",))
 LLM_COST_USD = Counter("agent_llm_cost_usd_total", "估算模型成本（美元）", ("model",))
+
+PREPARATION_BUCKETS = (.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10,
+                       15, 20, 30, 45, 60, 90, 120, 180, 300)
+PREPARATION_DURATION = Histogram("agent_preparation_duration_seconds", "Actual preparation excluding queue", ("trigger", "status"), buckets=PREPARATION_BUCKETS)
+PREPARATION_WAIT = Histogram("agent_preparation_wait_seconds", "Foreground acquisition including queue", ("endpoint", "outcome"), buckets=PREPARATION_BUCKETS)
+PREPARATION_STAGE = Histogram("agent_preparation_stage_duration_seconds", "Measured preparation phase", ("stage", "status"), buckets=PREPARATION_BUCKETS)
+PREPARATION_SCHEDULE = Counter("agent_preparation_schedule_total", "Authentication scheduling", ("result",))
+RUNTIME_CACHE = Counter("agent_runtime_cache_total", "Runtime cache accesses", ("cache", "result"))
+POOL_READY = Gauge("agent_sandbox_pool_ready", "Ready unassigned sandboxes")
+POOL_TARGET = Gauge("agent_sandbox_pool_target", "Configured per-process pool target")
+POOL_CREATING = Gauge("agent_sandbox_pool_creating", "Pool resources being created")
+POOL_REPLENISH = Counter("agent_sandbox_pool_replenish_total", "Pool creation results", ("status",))
+for _trigger in ("auth", "chat", "resume"):
+    for _status in ("success", "failure", "cancelled"):
+        PREPARATION_DURATION.labels(_trigger, _status)
+for _endpoint in ("chat", "resume"):
+    for _outcome in ("ready", "failure", "timeout", "cancelled"):
+        PREPARATION_WAIT.labels(_endpoint, _outcome)
+for _stage in ("sandbox", "graph", "sync"):
+    for _status in ("success", "failure", "cancelled"):
+        PREPARATION_STAGE.labels(_stage, _status)
+for _cache in ("graph", "health"):
+    for _result in ("hit", "miss", "invalidated"):
+        RUNTIME_CACHE.labels(_cache, _result)
+for _result in ("scheduled", "pending", "ready", "skipped_capacity"):
+    PREPARATION_SCHEDULE.labels(_result)
+for _status in ("success", "failure", "cancelled"):
+    POOL_REPLENISH.labels(_status)
+
+
+@contextmanager
+def preparation_measure(metric, label, *, deadline=None):
+    """Call around actual work or one waiter; callers own single-flight accounting."""
+    started = time.perf_counter()
+    status = "ready" if metric is PREPARATION_WAIT else "success"
+    try:
+        yield
+    except asyncio.CancelledError:
+        status = "failure" if deadline is not None and deadline.expired() else "cancelled"
+        raise
+    except TimeoutError:
+        status = "timeout" if metric is PREPARATION_WAIT else "failure"
+        raise
+    except BaseException:
+        status = "failure"
+        raise
+    finally:
+        metric.labels(label, status).observe(time.perf_counter() - started)
 
 # 在首个请求之前暴露零值，Prometheus 才能计算首次调用的增量。
 _DEFAULT_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
