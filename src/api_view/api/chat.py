@@ -41,6 +41,10 @@ AGENT_PREPARATION_TIMEOUT_SECONDS = 300
 AGENT_PREPARATION_PROGRESS_SECONDS = 10
 
 
+class AgentIdleTimeout(RuntimeError):
+    """Agent stopped producing stream events before the graph completed."""
+
+
 async def with_idle_timeout(iterator, seconds: int = 90):
     """如果 Agent 长时间没有任何事件，结束流并向用户返回错误。"""
     async_iterator = iterator.__aiter__()
@@ -50,7 +54,7 @@ async def with_idle_timeout(iterator, seconds: int = 90):
         except StopAsyncIteration:
             return
         except TimeoutError as exc:
-            raise RuntimeError("智能助手响应超时，请重试。会话和问题已为您保留。") from exc
+            raise AgentIdleTimeout("智能助手响应超时，请重试。会话和问题已为您保留。") from exc
 
 # 调试日志文件路径（在项目根目录的 temp 文件夹下）
 DEBUG_LOG_DIR = os.path.join(tempfile.gettempdir(), "deepagent_debug")
@@ -784,9 +788,57 @@ async def stream_chat_response(
         })
         observation.finish("success")
 
+    except AgentIdleTimeout as e:
+        # 模型可能在工具已经成功（尤其是审批后的写操作）后卡在最终总结阶段。
+        # 此时不能把整轮伪装成失败并诱导用户重试写操作；保存已经产生的消息和
+        # 工具结果，以可恢复的“部分完成”结束。完全没有输出时仍按真正超时处理。
+        has_completed_tool = any(
+            message.get("role") == "tool"
+            and message.get("tool_status") == "done"
+            and (message.get("text") or message.get("images"))
+            for message in display_messages
+        )
+        if collected_content.strip() or has_completed_tool:
+            for message in display_messages:
+                if message.get("role") == "tool" and message.get("tool_status") == "calling":
+                    message["tool_status"] = "ended"
+            notice = (
+                "\n\n> 本轮已取得的结果已保存，但最终总结生成超时。"
+                "请先核对上方工具结果或决策证据；涉及写操作时不要直接重复提交。"
+            )
+            recovered_content = collected_content.rstrip() + notice
+            display_messages.append({
+                "id": f"assistant-{uuid.uuid4()}",
+                "role": "assistant",
+                "content": notice.strip(),
+                "source": "system",
+            })
+            await agent_loader.save_display_messages(thread_id, [
+                message for message in display_messages
+                if not (message.get("role") == "assistant" and not message.get("content"))
+            ])
+            write_debug_log(debug_log, "STREAM_PARTIAL_TIMEOUT", {
+                "thread_id": thread_id,
+                "content_len": len(collected_content),
+                "has_completed_tool": has_completed_tool,
+            })
+            yield create_sse_message({
+                "type": "done",
+                "thread_id": thread_id,
+                "content": recovered_content,
+                "partial": True,
+                "reason": "idle_timeout",
+            })
+            observation.finish("failure")
+            return
+        if display_messages:
+            await agent_loader.save_display_messages(thread_id, display_messages)
+        write_debug_log(debug_log, "STREAM_ERROR", {"error": str(e)})
+        yield create_sse_message({"type": "error", "message": str(e)})
+        observation.finish("failure")
     except Exception as e:
-        if resume_data is None and display_messages:
-            # 即使 Agent 初始化失败也保留首条问题，让新会话立即出现在项目列表。
+        if display_messages:
+            # 普通请求和审批恢复都保存已取得的消息，避免成功工具结果在异常后丢失。
             await agent_loader.save_display_messages(thread_id, display_messages)
         write_debug_log(debug_log, "STREAM_ERROR", {"error": str(e)})
         yield create_sse_message({

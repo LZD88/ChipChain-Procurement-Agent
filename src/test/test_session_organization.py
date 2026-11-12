@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock
 
 from agent.mysql_storage import MySQLStorage
 from agent.schema import ChatRequest, ProjectCreateRequest, SessionUpdateRequest
-from api_view.api.chat import with_idle_timeout
+from api_view.api.chat import AgentIdleTimeout, with_idle_timeout
 
 
 class FakeCursor:
@@ -107,7 +107,7 @@ class SessionOrganizationTests(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(0.05)
             yield {"type": "token"}
 
-        with self.assertRaisesRegex(RuntimeError, "响应超时"):
+        with self.assertRaisesRegex(AgentIdleTimeout, "响应超时"):
             async for _ in with_idle_timeout(stalled(), seconds=0.001):
                 pass
 
