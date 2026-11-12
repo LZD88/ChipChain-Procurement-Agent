@@ -330,3 +330,9 @@ python -B tests/test_mysql_integration.py
 
 集成验证覆盖真实建表、嵌套子图审批中断、断开重连后恢复、中文消息、展示历史、
 沙箱绑定、事务回滚、会话删除、账号和登录会话持久化；不调用真实 LLM、ERP 写操作或 OpenSandbox。
+
+## 环境准备性能
+
+登录后的异步准备、沙箱健康缓存、预热池及用户 graph 复用的配置、资源成本和回退方式见 [环境准备运行说明](docs/runtime-preparation.md)。
+
+本机 VM、自动化测试与只读对话的脱敏实测记录见 [环境准备优化验收](docs/runtime-preparation-validation.md)。
