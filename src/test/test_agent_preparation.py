@@ -86,7 +86,7 @@ class AgentPreparationTests(unittest.IsolatedAsyncioTestCase):
         )
         replacement = SimpleNamespace(id="replacement")
         with patch.object(sandbox_manager, "SANDBOX_BACKENDS", {}), \
-             patch.object(sandbox_manager, "_warm_reserve", None), \
+             patch.object(sandbox_manager, "_ready", __import__("collections").deque()), \
              patch.object(sandbox_manager, "_storage", storage), \
              patch.object(sandbox_manager, "_schedule_replenish"), \
              patch.object(sandbox_manager, "setup_sandbox", AsyncMock(return_value=replacement)), \
@@ -106,7 +106,7 @@ class AgentPreparationTests(unittest.IsolatedAsyncioTestCase):
             return SimpleNamespace(id="shared-environment")
 
         with patch.object(sandbox_manager, "SANDBOX_BACKENDS", {}), \
-             patch.object(sandbox_manager, "_warm_reserve", None), \
+             patch.object(sandbox_manager, "_ready", __import__("collections").deque()), \
              patch.object(sandbox_manager, "_storage", storage), \
              patch.object(sandbox_manager, "_schedule_replenish"), \
              patch.object(sandbox_manager, "setup_sandbox", AsyncMock(side_effect=setup)) as prepare, \
@@ -146,7 +146,7 @@ class AgentPreparationTests(unittest.IsolatedAsyncioTestCase):
             if False:
                 yield
 
-        async def prepare(_user_id):
+        async def prepare(_user_id, **_kwargs):
             await asyncio.sleep(.03)
             return SimpleNamespace(astream=chunks)
 
@@ -162,7 +162,7 @@ class AgentPreparationTests(unittest.IsolatedAsyncioTestCase):
     async def test_preparation_timeout_cancels_task_and_reports_error(self):
         cancelled = asyncio.Event()
 
-        async def prepare(_user_id):
+        async def prepare(_user_id, **_kwargs):
             try:
                 await asyncio.Event().wait()
             finally:
@@ -179,7 +179,7 @@ class AgentPreparationTests(unittest.IsolatedAsyncioTestCase):
     async def test_disconnecting_during_preparation_cancels_task(self):
         cancelled = asyncio.Event()
 
-        async def prepare(_user_id):
+        async def prepare(_user_id, **_kwargs):
             try:
                 await asyncio.Event().wait()
             finally:
@@ -205,6 +205,16 @@ class AgentPreparationTests(unittest.IsolatedAsyncioTestCase):
                 with self.assertRaises(asyncio.CancelledError):
                     await sandbox_setup.setup_sandbox(object(), sandbox_id=sandbox_id)
             self.assertEqual(sandbox.kill.await_count, 0 if sandbox_id else 1)
+
+    async def test_failed_reconnect_does_not_cold_create_before_pool_fallback(self):
+        for failure in (TimeoutError(), ConnectionError("unreachable")):
+            with self.subTest(failure=type(failure).__name__), \
+                 patch.object(sandbox_setup.Sandbox, "connect", AsyncMock(side_effect=failure)), \
+                 patch.object(sandbox_setup.Sandbox, "create", AsyncMock()) as create:
+                with self.assertRaises(type(failure)):
+                    await sandbox_setup.setup_sandbox(object(), sandbox_id="expired")
+                create.assert_not_awaited()
+
 
 
 if __name__ == "__main__":

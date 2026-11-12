@@ -5,7 +5,7 @@ OpenSandbox 沙箱的初始化与文件播种模块。
 1. 获取或创建 OpenSandbox 沙箱，包装为 OpenSandboxBackend。
 2. 播种技能文件（技能包 SKILL.md 和根目录共享参考资料）。
 
-注意：AGENTS.md 不在此处播种，改由 create_main_agent 在每次请求时上传到沙箱。
+注意：AGENTS.md 不在此处播种，由 create_main_agent 按沙箱代际和内容播种。
 用户长期记忆（/memories/）由 CompositeBackend 路由到 StoreBackend 持久化。
 运行时的增量技能同步由 SkillsSyncMiddleware 负责。
 """
@@ -45,13 +45,11 @@ async def setup_sandbox(config, sandbox_id=None, image=None) -> OpenSandboxBacke
     """
     if sandbox_id:
         logger.debug("连接已有沙箱：%s", sandbox_id)
-        try:
-            sandbox = await asyncio.wait_for(
-                Sandbox.connect(sandbox_id, connection_config=config), timeout=15,
-            )
-        except Exception:
-            logger.warning("连接沙箱 %s 失败，将创建新沙箱", sandbox_id, exc_info=True)
-            sandbox_id = None
+        # The manager owns fallback order. Creating here would bypass its ready
+        # pool and spend a cold-start timeout before trying an available reserve.
+        sandbox = await asyncio.wait_for(
+            Sandbox.connect(sandbox_id, connection_config=config), timeout=15,
+        )
 
     if not sandbox_id:
         if not image:
@@ -200,7 +198,7 @@ async def _seed_files(backend: OpenSandboxBackend) -> None:
     """
     将本地技能文件（/skills/ 下的 SKILL.md 等）播种到沙箱。
 
-    AGENTS.md 不在此处播种（由 create_main_agent 每次请求上传）。
+    AGENTS.md 不在此处播种（由 create_main_agent 按代际和内容播种）。
     只上传内容与沙箱不一致的文件，已一致的跳过，避免重复写入。
     """
     file_mapping: List[Tuple[Path, str]] = []
