@@ -695,6 +695,14 @@ class MySQLStorage:
         async with self.cursor() as cur:
             await cur.execute("DELETE FROM auth_sessions WHERE token_hash = %s", (token_hash,))
 
+    async def has_auth_sessions(self, username):
+        async with self.cursor() as cur:
+            await cur.execute(
+                "SELECT 1 FROM auth_sessions WHERE username = %s "
+                "AND expires_at > UTC_TIMESTAMP(6) LIMIT 1", (username,),
+            )
+            return await cur.fetchone() is not None
+
     async def grant_capability(self, username, capability, *, granted_by=None):
         validate_capability(capability)
         async with self.cursor(transaction=True) as cur:

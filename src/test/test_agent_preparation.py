@@ -215,6 +215,47 @@ class AgentPreparationTests(unittest.IsolatedAsyncioTestCase):
                     await sandbox_setup.setup_sandbox(object(), sandbox_id="expired")
                 create.assert_not_awaited()
 
+    async def test_stream_releases_real_graph_lease_after_completion(self):
+        from api_view.runtime_preparation import GraphEntry, GraphLease
+        async def chunks(**kwargs):
+            if False:
+                yield
+        registry = SimpleNamespace(release=AsyncMock())
+        entry = GraphEntry("qa", SimpleNamespace(astream=chunks), object(), 0, "v1", 0)
+        lease = GraphLease(registry, entry)
+        with self.patches(AsyncMock(return_value=lease)):
+            events = [json.loads(item[5:]) async for item in chat.stream_chat_response(
+                message="采购核验", thread_id="lease-complete", user_id="qa")]
+        self.assertEqual(events[-1]["type"], "done")
+        registry.release.assert_awaited_once_with(entry)
+
+    async def test_disconnected_waiter_preserves_shared_background_preparation(self):
+        from api_view.runtime_preparation import RuntimePreparation
+        from agent.backends.sandbox_proxy import SandboxBackendProxy
+        loader = AgentLoader()
+        release = asyncio.Event()
+        entered = asyncio.Event()
+        async def build(user, proxy):
+            entered.set()
+            await release.wait()
+            return object()
+        loader._runtime = RuntimePreparation(build, lambda: "test")
+        proxy = SandboxBackendProxy(SimpleNamespace(id="existing"))
+        with patch.object(chat, "agent_loader", loader), \
+             patch.object(chat, "AGENT_PREPARATION_PROGRESS_SECONDS", .005), \
+             patch.object(sandbox_manager, "SANDBOX_BACKENDS", {"qa": proxy}), \
+             patch.object(sandbox_manager, "ensure_sandbox_for_user", AsyncMock(return_value=proxy)):
+            loader._runtime.schedule("qa")
+            stream = chat.prepare_agent("qa", "shared-disconnect")
+            await anext(stream)
+            await anext(stream)
+            await entered.wait()
+            await stream.aclose()
+            self.assertFalse(loader._runtime.pending["qa"].done())
+            release.set()
+            await loader._runtime.pending["qa"]
+            self.assertEqual(len(loader._runtime.entries), 1)
+            await loader._runtime.close()
 
 
 if __name__ == "__main__":

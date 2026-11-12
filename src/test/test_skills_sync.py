@@ -51,7 +51,7 @@ class SkillsUploadTests(unittest.IsolatedAsyncioTestCase):
         ]
         self.backend.aupload_files.side_effect = self.upload_files
 
-    def check_file(self, command):
+    def check_file(self, command, **_kwargs):
         args = shlex.split(command)
         self.assertEqual(args[:2], ["test", "-f"])
         self.assertEqual(len(args), 3)
@@ -151,6 +151,43 @@ class SkillsUploadTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(references)
         for path in references:
             self.assertEqual(self.remote[path], self.expected[self.reference_path])
+
+    async def test_generation_resets_cached_hashes_and_concurrent_sync_is_shared(self):
+        import asyncio
+        from agent.backends.sandbox_proxy import SandboxBackendProxy
+        proxy = SandboxBackendProxy(self.backend)
+        middleware = skills_sync.SkillsSyncMiddleware(proxy)
+        await asyncio.gather(middleware._sync_files(), middleware._sync_files())
+        self.assertEqual(self.backend.aupload_files.await_count, 1)
+        self.remote.clear()
+        self.backend.aupload_files.reset_mock()
+        proxy.replace_backend(self.backend)
+        await middleware._sync_files()
+        self.assertEqual(self.remote, self.expected)
+        self.backend.aupload_files.assert_awaited_once()
+
+    async def test_persisted_restore_tracks_content_success_and_generation(self):
+        from types import SimpleNamespace
+        from agent.backends.sandbox_proxy import SandboxBackendProxy
+        from agent.middlewares.user_skills_restore import UserSkillsRestoreMiddleware
+        proxy = SandboxBackendProxy(self.backend)
+        middleware = UserSkillsRestoreMiddleware(proxy, ("skills",))
+        item = SimpleNamespace(key="main/custom/SKILL.md", value={"content": "v1"})
+        store = SimpleNamespace(asearch=AsyncMock(return_value=[item]))
+        await middleware.sync(store)
+        await middleware.sync(store)
+        self.assertEqual(self.backend.aupload_files.await_count, 1)
+        item.value = {"content": "v2"}
+        self.backend.aupload_files.side_effect = lambda files: []
+        with self.assertRaises(RuntimeError):
+            await middleware.sync(store)
+        self.backend.aupload_files.side_effect = self.upload_files
+        await middleware.sync(store)
+        self.assertEqual(self.remote["/skills/main/custom/SKILL.md"], b"v2")
+        self.remote.clear()
+        proxy.replace_backend(self.backend)
+        await middleware.sync(store)
+        self.assertEqual(self.remote["/skills/main/custom/SKILL.md"], b"v2")
 
 
 if __name__ == "__main__":

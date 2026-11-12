@@ -3,7 +3,7 @@
 
 使用 DeepAgents `create_deep_agent` 将所有组件串联为一个可运行的
 ERP 采购智能助手。采用 Graph Factory 模式：启动时预计算可复用组件，
-每次请求基于 per-user 沙箱轻量创建 agent graph，实现用户级沙箱隔离。
+按用户与沙箱代际创建并复用 graph，实现用户级沙箱隔离。
 
 使用方式:
     from agent.main_agent import precompute_agent_context, create_main_agent
@@ -11,7 +11,7 @@ ERP 采购智能助手。采用 Graph Factory 模式：启动时预计算可复�
     # 启动时
     precomputed = await precompute_agent_context()
 
-    # 每次请求
+    # 首次准备或缓存失效时
     agent_graph = await create_main_agent(
         config,
         sandbox_backend=user_sandbox,
@@ -22,6 +22,8 @@ ERP 采购智能助手。采用 Graph Factory 模式：启动时预计算可复�
 from __future__ import annotations
 
 import logging
+import hashlib
+import json
 from dataclasses import dataclass, field
 
 from deepagents import SubAgent, create_deep_agent
@@ -69,9 +71,38 @@ from agent.tools.download_sandbox_file import create_download_tool
 from agent.tools.mcp_client import load_mcp_tools
 from agent.tools.web_search import web_search
 from agent.tools.scoped_mcp import wrap_signed_mcp_tool
+from agent.backends.sandbox_sync import sync_lock, generation
+from agent.backends.sandbox_proxy import SandboxBackendProxy
+from api_view.observability import PREPARATION_STAGE, preparation_measure
 
 
 logger = logging.getLogger(__name__)
+
+
+def agent_fingerprint(precomputed):
+    """Only deployment inputs; never run identity, credentials or approvals."""
+    from agent.memory import prompts
+    models = []
+    for model in (MAIN_MODEL, SUMMARY_MODEL):
+        models.append({key: getattr(model, key, None) for key in
+                       ("model_name", "model", "temperature", "max_tokens", "streaming",
+                        "top_p", "frequency_penalty", "presence_penalty", "seed")})
+    tools = []
+    if precomputed is not None:
+        for tool in [*precomputed.analyst_mcp_tools, *precomputed.order_mcp_tools,
+                     *precomputed.extra_mcp_tools, precomputed.chart_tool]:
+            if tool is None:
+                continue
+            tools.append((tool.name, tool.description, tool.args))
+    payload = {
+        "prompts": {name: getattr(prompts, name) for name in
+                    ("system_prompt", "PROCUREMENT_ANALYST_PROMPT", "PROCUREMENT_ORDER_PROMPT", "PROCUREMENT_ORCHESTRATOR_PROMPT")},
+        "agents": LOCAL_AGENTS_MD.read_text(encoding="utf-8"),
+        "models": models, "tools": tools, "precomputed_generation": id(precomputed),
+        "tool_registration": [web_search.name, request_order_info.name,
+                              repr(create_analyst_middleware), repr(create_order_middleware)],
+    }
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
 
 
 # ============================================================
@@ -84,7 +115,7 @@ class PrecomputedContext:
 
     仅包含不依赖 sandbox_backend 的组件。
     sandbox 依赖的工具（assign_skill、download_sandbox_file）和 backend 依赖的
-    中间件在 create_main_agent() 中按请求动态创建。
+    中间件在 create_main_agent() 中按用户和沙箱代际创建。
     """
     analyst_mcp_tools: list = field(default_factory=list)
     order_mcp_tools: list = field(default_factory=list)
@@ -110,7 +141,7 @@ async def precompute_agent_context() -> PrecomputedContext:
 
 
 # ============================================================
-# create_main_agent — 每次请求基于 per-user 沙箱创建 agent graph
+# create_main_agent — 基于 per-user 沙箱创建可租用的 agent graph
 # ============================================================
 
 async def create_main_agent(
@@ -119,13 +150,13 @@ async def create_main_agent(
     sandbox_backend: SandboxBackendProtocol,
     precomputed: PrecomputedContext,
 ):
-    """创建 ERP 采购智能助手的 per-request graph factory。
+    """创建 ERP 采购智能助手的用户 graph，供准备注册表缓存和租用。
 
-    每次请求调用，使用预计算的工具 + 外部传入的 per-user 沙箱，
-    轻量创建 agent graph。SandboxBackendProxy 保证沙箱热替换不丢引用。
+    缓存缺失或失效时调用，使用预计算工具及传入的 per-user 沙箱。
+    SandboxBackendProxy 保证沙箱热替换不丢引用。
 
     Args:
-        config: LangGraph RunnableConfig，含 thread_id + user_id。
+        config: 准备配置，含 user_id；实际 thread_id 在每次运行时传入。
         sandbox_backend: per-user 沙箱后端（SandboxBackendProxy）。
         precomputed: 启动时预计算的 MCP 工具和图表工具。
     """
@@ -150,7 +181,22 @@ async def create_main_agent(
     )
 
     agents_md_bytes = LOCAL_AGENTS_MD.read_text(encoding="utf-8").encode("utf-8")
-    await sandbox_backend.aupload_files([("/AGENTS.md", agents_md_bytes)])
+    async with sync_lock(sandbox_backend):
+        with preparation_measure(PREPARATION_STAGE, "sync"):
+            agents_key = (generation(sandbox_backend), hashlib.sha256(agents_md_bytes).hexdigest())
+            previous = getattr(sandbox_backend, "_agents_content_key", None)
+            if previous != agents_key:
+                results = await sandbox_backend.aupload_files([("/AGENTS.md", agents_md_bytes)])
+                if not any(result.path == "/AGENTS.md" and result.error is None for result in results):
+                    raise RuntimeError("AGENTS.md 初始化上传失败")
+                if isinstance(sandbox_backend, SandboxBackendProxy):
+                    sandbox_backend._agents_content_key = agents_key
+
+    skills_sync = SkillsSyncMiddleware(sandbox_backend)
+    skills_restore = UserSkillsRestoreMiddleware(sandbox_backend, SKILLS_STORE_NAMESPACE)
+    # Complete first-run remote synchronization while preparing, before a model runs.
+    await skills_sync._sync_files()
+    await skills_restore.sync(STORE)
 
     # ---- Phase 2: 创建依赖当前用户沙箱的工具 ----
     assign_skill = create_assign_skill_tool(
@@ -258,9 +304,9 @@ async def create_main_agent(
         # 3. 用户上下文注入
         UserInfoInjectionMiddleware(),
         # 4. 技能同步（本地 → 沙箱）
-        SkillsSyncMiddleware(sandbox_backend),
+        skills_sync,
         # 5. 持久化技能恢复（StoreBackend → 沙箱）
-        UserSkillsRestoreMiddleware(sandbox_backend, SKILLS_STORE_NAMESPACE),
+        skills_restore,
         # 6. 对话摘要
         create_summarization_tool_middleware(SUMMARY_MODEL, backend),
         # 7. 沙箱熔断：连续沙箱错误 ≥ 阈值 → jump_to=end

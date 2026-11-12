@@ -2,7 +2,7 @@
 Agent 加载器
 
 使用 Graph Factory 模式管理 DeepAgent 实例，实现用户级沙箱隔离。
-启动时预计算 MCP 工具和图表工具，每次请求基于 per-user 沙箱创建 agent graph。
+启动时预计算工具，认证后提前准备 per-user 沙箱与可租用 graph。
 """
 
 from typing import Optional, List, Dict, Any
@@ -16,9 +16,10 @@ from deepagents import DeepAgentState
 from langchain_core.messages import AIMessage
 from langgraph.graph import StateGraph, START, END
 
-from agent.main_agent import create_main_agent, precompute_agent_context, PrecomputedContext
+from agent.main_agent import create_main_agent, precompute_agent_context, PrecomputedContext, agent_fingerprint
 from agent.backends import sandbox_manager
 from agent.mysql_storage import mysql_storage
+from api_view.runtime_preparation import RuntimePreparation
 
 logger = logging.getLogger(__name__)
 
@@ -38,13 +39,14 @@ class AgentLoader:
     Agent 加载器单例类
 
     负责管理 Agent 生命周期、MySQL 连接、沙箱管理和会话相关操作。
-    采用 Graph Factory 模式：每次请求基于 per-user 沙箱创建 agent graph。
+    用户 graph 按沙箱代际缓存，运行期间持有租用。
     """
 
     def __init__(self):
         self._initialized = False
         self._precomputed: PrecomputedContext | None = None
         self._prewarm_task: asyncio.Task | None = None
+        self._runtime: RuntimePreparation | None = None
 
     async def initialize(self):
         """
@@ -66,6 +68,7 @@ class AgentLoader:
 
             # 3. 预计算 MCP 工具 + 图表工具
             self._precomputed = await precompute_agent_context()
+            self._preparation_runtime()
 
             self._initialized = True
             # 4. 沙箱预热放到后台。OpenSandbox 变慢或暂时异常时，API 仍应先开始
@@ -86,20 +89,28 @@ class AgentLoader:
         except Exception:
             logger.exception("后台预热沙箱失败；API 保持可用，首次请求时将按需恢复")
 
-    async def get_agent_for_user(self, user_id: str):
-        """
-        获取 per-user agent graph。
+    def _preparation_runtime(self):
+        if self._runtime is None:
+            self._runtime = RuntimePreparation(self._build_user_graph,
+                                               lambda: agent_fingerprint(self._precomputed))
+        return self._runtime
 
-        每次请求调用：获取/创建 per-user 沙箱 → 创建 agent graph。
-        同一用户的多个 thread 共享沙箱（缓存命中 < 0.1s）。
+    def schedule_preparation(self, user_id):
+        if self._initialized:
+            try:
+                self._preparation_runtime().schedule(user_id)
+            except Exception:
+                logger.exception("后台环境调度失败，前台仍可按需准备")
 
-        Args:
-            user_id: 用户唯一标识。
+    async def logout_preparation(self, user_id):
+        if self._runtime is not None:
+            await self._runtime.logout(user_id)
 
-        Returns:
-            CompiledStateGraph: 该用户的 agent graph。
-        """
-        sandbox_backend = await sandbox_manager.ensure_sandbox_for_user(user_id)
+    async def get_agent_for_user(self, user_id: str, endpoint="chat"):
+        return await self._preparation_runtime().acquire(user_id, endpoint)
+
+    async def _build_user_graph(self, user_id, sandbox_backend):
+        """Compile only after acquiring a compatible sandbox for this user."""
         config = self.create_config(user_id=user_id)
         return await create_main_agent(
             config,
@@ -121,6 +132,9 @@ class AgentLoader:
     async def shutdown(self) -> None:
         """应用关闭时清理所有沙箱和 MySQL 连接池。"""
         try:
+            if self._runtime is not None:
+                await self._runtime.close()
+                self._runtime = None
             if self._prewarm_task and not self._prewarm_task.done():
                 self._prewarm_task.cancel()
                 with suppress(asyncio.CancelledError):

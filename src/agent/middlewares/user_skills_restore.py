@@ -14,6 +14,9 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
 
 from langchain.agents.middleware import AgentMiddleware
+import hashlib
+from agent.backends.sandbox_sync import sync_lock, generation
+from api_view.observability import PREPARATION_STAGE, preparation_measure
 
 
 class UserSkillsRestoreMiddleware(AgentMiddleware):
@@ -28,16 +31,34 @@ class UserSkillsRestoreMiddleware(AgentMiddleware):
         super().__init__()
         self.backend = backend
         self.namespace = skills_namespace
+        self._sync_lock = sync_lock(backend)
+        self._generation = generation(backend)
+        self._hashes = {}
 
     async def abefore_agent(
         self, state: Dict[str, Any], runtime: Any
     ) -> Optional[Dict[str, Any]]:
         """运行前：从 StoreBackend 读取持久化技能，上传到沙箱。"""
-        store = runtime.store
-        files = await self._collect_skills(store)
-        if files:
-            await self.backend.aupload_files(files)
+        await self.sync(runtime.store)
         return None
+
+    async def sync(self, store):
+        async with self._sync_lock:
+            with preparation_measure(PREPARATION_STAGE, "sync"):
+                current = generation(self.backend)
+                if self._generation != current:
+                    self._hashes.clear()
+                    self._generation = current
+                files = await self._collect_skills(store)
+                hashes = {path: hashlib.sha256(content).hexdigest() for path, content in files}
+                changed = [(path, content) for path, content in files
+                           if self._hashes.get(path) != hashes[path]]
+                if changed:
+                    results = await self.backend.aupload_files(changed)
+                    uploaded = {result.path for result in results if result.error is None}
+                    if any(path not in uploaded for path, _ in changed):
+                        raise RuntimeError("持久化技能恢复失败")
+                self._hashes.update(hashes)
 
     def before_agent(
         self, state: Dict[str, Any], runtime: Any

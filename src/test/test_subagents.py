@@ -1,6 +1,7 @@
 """子 Agent 直接绑定的离线回归测试，使用真实 DeepAgents 图和模拟模型/工具。"""
 
 import os
+import asyncio
 from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
@@ -208,6 +209,53 @@ class SubagentTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(result.status, "error")
             self.assertEqual(result.tool_call_id, "test-call")
             self.assertIn("测试异常", result.content)
+
+    async def test_one_compiled_graph_isolates_concurrent_threads_and_call_counts(self):
+        counts = []
+        original = main_agent.ModelCallLimitMiddleware.aafter_model
+        async def observe(middleware, state, runtime):
+            counts.append(state.get("run_model_call_count", 0))
+            return await original(middleware, state, runtime)
+        counter_patch = patch.object(main_agent.ModelCallLimitMiddleware, "aafter_model", observe)
+        counter_patch.start()
+        self.addCleanup(counter_patch.stop)
+        graph, _, _ = await self.create_graph()
+        context = main_agent.ProcurementContext(user_id="test-user", username="测试用户")
+        configs = [{"configurable": {"thread_id": f"cached-{i}", "user_id": "test-user"}} for i in range(2)]
+        results = await asyncio.gather(*(
+            graph.ainvoke({"messages": [("user", f"私有问题-{i}")]}, config, context=context)
+            for i, config in enumerate(configs)
+        ))
+        for i, result in enumerate(results):
+            text = str(result["messages"])
+            self.assertIn(f"私有问题-{i}", text)
+            self.assertNotIn(f"私有问题-{1-i}", text)
+        resumed = await graph.ainvoke({"messages": [("user", "后续问题")]}, configs[0], context=context)
+        self.assertEqual(counts, [0, 0, 0])
+        self.assertIn("私有问题-0", str(resumed["messages"]))
+
+    async def test_cached_graph_does_not_share_approval_between_threads(self):
+        self.model.responses = [
+            AIMessage(content="", tool_calls=[{"name": "task", "id": "delegate", "args": {
+                "subagent_type": "procurement-order", "description": "处理测试订单"}}]),
+            AIMessage(content="", tool_calls=[{"name": "order_update", "id": "write", "args": {}}]),
+            AIMessage(content="订单任务结束"), AIMessage(content="处理完成"),
+        ]
+        graph, _, _ = await self.create_graph()
+        context = main_agent.ProcurementContext(user_id="test-user", username="测试用户")
+        configs = [{"configurable": {"thread_id": f"approval-cache-{i}", "user_id": "test-user"}} for i in range(2)]
+        for config in configs:
+            self.model.i = 0
+            result = await graph.ainvoke({"messages": [("user", "处理测试订单")]}, config, context=context)
+            self.assertTrue(result.get("__interrupt__"))
+        self.assertEqual(self.executed, [])
+        await graph.ainvoke(Command(resume={"decisions": [{"type": "reject"}]}), configs[0], context=context)
+        self.assertEqual(self.executed, [])
+        pending = await graph.aget_state(configs[1])
+        self.assertTrue(pending.next)
+        self.model.i = 2
+        await graph.ainvoke(Command(resume={"decisions": [{"type": "approve"}]}), configs[1], context=context)
+        self.assertEqual(self.executed, ["order_update"])
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field, field_validator
 
 from agent.mysql_storage import mysql_storage
+from api_view.agent_loader import agent_loader
 from api_view.auth import (
     COOKIE_NAME, cookie_secure, hash_password, require_same_origin_request,
     require_user, start_session, token_hash, verify_password,
@@ -38,7 +39,9 @@ async def register(body: Credentials, request: Request, response: Response):
         encoded = await asyncio.to_thread(hash_password, body.password)
     if not await mysql_storage.create_user(body.username, encoded):
         raise HTTPException(409, "用户名已被注册")
-    return await start_session(body.username, request, response)
+    result = await start_session(body.username, request, response)
+    agent_loader.schedule_preparation(body.username)
+    return result
 
 
 @router.post("/login")
@@ -49,12 +52,15 @@ async def login(body: Credentials, request: Request, response: Response):
                                         user["password_hash"] if user else _DUMMY_HASH)
     if not user or not valid:
         raise HTTPException(401, "用户名或密码错误")
-    return await start_session(user["username"], request, response)
+    result = await start_session(user["username"], request, response)
+    agent_loader.schedule_preparation(user["username"])
+    return result
 
 
 @router.get("/me")
 async def current_user(response: Response, username: str = Depends(require_user)):
     response.headers["Cache-Control"] = "no-store"
+    agent_loader.schedule_preparation(username)
     return {"user": {"username": username}}
 
 
@@ -62,6 +68,9 @@ async def current_user(response: Response, username: str = Depends(require_user)
 async def logout(request: Request, response: Response):
     token = request.cookies.get(COOKIE_NAME)
     if token:
+        user = await mysql_storage.get_auth_user(token_hash(token))
         await mysql_storage.delete_auth_session(token_hash(token))
+        if user and not await mysql_storage.has_auth_sessions(user["username"]):
+            await agent_loader.logout_preparation(user["username"])
     response.delete_cookie(COOKIE_NAME, path="/api", httponly=True, secure=cookie_secure(request), samesite="lax")
     response.headers["Cache-Control"] = "no-store"

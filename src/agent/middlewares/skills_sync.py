@@ -16,6 +16,8 @@ from langchain_core.messages import SystemMessage
 from deepagents.backends.sandbox import BaseSandbox  # 使用通用的沙箱后端协议
 
 from agent.config import LOCAL_SKILLS_DIR, SANDBOX_SKILLS_ROOT
+from agent.backends.sandbox_sync import sync_lock, generation
+from api_view.observability import PREPARATION_STAGE, preparation_measure
 
 
 class SkillsSyncMiddleware(AgentMiddleware):
@@ -26,6 +28,8 @@ class SkillsSyncMiddleware(AgentMiddleware):
         self.backend = backend
         # 缓存本地文件哈希，避免重复同步
         self._last_hashes: Dict[str, str] = {}
+        self._sync_lock = sync_lock(backend)
+        self._generation = generation(backend)
 
     # --------------------- 钩子 ---------------------
     def before_agent(self, state: Dict[str, Any], runtime: Any) -> Optional[Dict[str, Any]]:
@@ -40,6 +44,15 @@ class SkillsSyncMiddleware(AgentMiddleware):
 
     # --------------------- 文件同步 ---------------------
     async def _sync_files(self) -> List[str]:
+        async with self._sync_lock:
+            with preparation_measure(PREPARATION_STAGE, "sync"):
+                current = generation(self.backend)
+                if self._generation != current:
+                    self._last_hashes.clear()
+                    self._generation = current
+                return await self._sync_files_locked()
+
+    async def _sync_files_locked(self) -> List[str]:
         """扫描本地技能目录，将新增/修改的文件上传到沙箱。
 
         Returns:

@@ -27,6 +27,7 @@ from agent.schema import (
     Message,
 )
 from api_view.agent_loader import agent_loader
+from api_view.runtime_preparation import GraphLease
 from api_view.auth import require_same_origin_request, require_thread, require_user
 from agent.mysql_storage import mysql_storage
 from agent.decision_repository import DecisionRepository
@@ -354,14 +355,15 @@ async def record_hitl_resume_events(
 # 流式对话核心逻辑
 # ============================================================
 
-async def prepare_agent(user_id: str, thread_id: str):
-    """初始化有心跳和总时限；取消连接时及时回收初始化任务。"""
+async def prepare_agent(user_id: str, thread_id: str, endpoint="chat"):
+    """Bound this request's acquisition; shared preparation owns its lifecycle."""
     yield create_sse_message({
         "type": "progress", "stage": "preparing",
         "message": "正在连接采购分析环境…", "thread_id": thread_id,
     }), None
     started = asyncio.get_running_loop().time()
-    preparation = asyncio.create_task(agent_loader.get_agent_for_user(user_id))
+    preparation = asyncio.create_task(agent_loader.get_agent_for_user(user_id, endpoint=endpoint))
+    delivered = False
     try:
         async with asyncio.timeout(AGENT_PREPARATION_TIMEOUT_SECONDS):
             while not preparation.done():
@@ -375,6 +377,7 @@ async def prepare_agent(user_id: str, thread_id: str):
                         "message": f"正在连接并检查采购分析环境，已等待 {elapsed} 秒…",
                         "thread_id": thread_id,
                     }), None
+            delivered = True
             yield None, preparation.result()
     except TimeoutError as exc:
         raise RuntimeError("分析环境连接超时，请稍后重试。会话和问题已为您保留。") from exc
@@ -382,6 +385,10 @@ async def prepare_agent(user_id: str, thread_id: str):
         if not preparation.done():
             preparation.cancel()
         await asyncio.gather(preparation, return_exceptions=True)
+        if not delivered and not preparation.cancelled() and preparation.exception() is None:
+            lease = preparation.result()
+            if isinstance(lease, GraphLease):
+                await lease.release()
 
 
 async def stream_chat_response(
@@ -406,6 +413,7 @@ async def stream_chat_response(
     """
     endpoint = "resume" if resume_data is not None else "chat"
     observation = StreamObservation(endpoint).start()
+    agent_graph = None
     context = {"user_id": user_id, "username": user_id}
     if direct_response is not None:
         context["guardrail_response"] = direct_response
@@ -461,7 +469,7 @@ async def stream_chat_response(
         if direct_response is not None and resume_data is None:
             agent_graph = agent_loader.get_direct_response_agent(direct_response)
         else:
-            async with aclosing(prepare_agent(user_id, thread_id)) as preparation_stream:
+            async with aclosing(prepare_agent(user_id, thread_id, endpoint)) as preparation_stream:
                 async for progress, prepared_graph in preparation_stream:
                     if progress is not None:
                         yield progress
@@ -847,6 +855,8 @@ async def stream_chat_response(
         })
         observation.finish("failure")
     finally:
+        if isinstance(agent_graph, GraphLease):
+            await agent_graph.release()
         # 客户端中途断开时异步生成器会直接关闭，也要归还活跃请求计数。
         observation.finish("cancelled")
 
