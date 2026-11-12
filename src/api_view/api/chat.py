@@ -11,6 +11,7 @@ import re
 import os
 import tempfile
 import hashlib
+import time
 from contextlib import aclosing
 from datetime import datetime
 from typing import AsyncIterator
@@ -32,7 +33,10 @@ from api_view.auth import require_same_origin_request, require_thread, require_u
 from agent.mysql_storage import mysql_storage
 from agent.decision_repository import DecisionRepository
 from agent.input_guard import InputSafetyError, get_input_guard
-from api_view.observability import StreamObservation
+from api_view.observability import StreamObservation, REQUEST_ROUTES, CLASSIFIER_DURATION
+from agent.request_routing import route_request
+from agent.request_classifier import resolve_request_route
+from agent.runtime_config import RuntimeConfig
 
 
 # 创建路由
@@ -412,7 +416,11 @@ async def stream_chat_response(
     同时累积完整的展示消息列表（包含子代理消息），在流结束后存入 MySQL。
     """
     endpoint = "resume" if resume_data is not None else "chat"
-    observation = StreamObservation(endpoint).start()
+    routing_config = RuntimeConfig.from_env()
+    route = route_request(message, enabled=routing_config.request_routing_enabled,
+                          resume=resume_data is not None)
+    route_mode = "direct" if direct_response is not None and resume_data is None else route.mode
+    observation = StreamObservation(endpoint, route=route_mode).start()
     agent_graph = None
     context = {"user_id": user_id, "username": user_id}
     if direct_response is not None:
@@ -466,8 +474,32 @@ async def stream_chat_response(
                 "thread_id": thread_id,
             })
 
+        if route_mode != "direct" and route.reason == "uncertain":
+            if routing_config.request_router_llm_enabled:
+                yield create_sse_message({
+                    "type": "progress", "stage": "routing",
+                    "message": "正在识别处理方式…", "thread_id": thread_id,
+                })
+            classification_started = time.perf_counter()
+            try:
+                route = await resolve_request_route(
+                    message, enabled=routing_config.request_routing_enabled,
+                    classifier_enabled=routing_config.request_router_llm_enabled,
+                    timeout=routing_config.request_router_timeout_seconds,
+                )
+            except asyncio.CancelledError:
+                CLASSIFIER_DURATION.labels("cancelled").observe(time.perf_counter() - classification_started)
+                raise
+            if routing_config.request_router_llm_enabled:
+                CLASSIFIER_DURATION.labels(route.reason).observe(time.perf_counter() - classification_started)
+            route_mode = route.mode
+            observation.route = route_mode
+        REQUEST_ROUTES.labels(route_mode, "guardrail" if route_mode == "direct" else route.reason).inc()
+
         if direct_response is not None and resume_data is None:
             agent_graph = agent_loader.get_direct_response_agent(direct_response)
+        elif route.mode == "lightweight":
+            agent_graph = agent_loader.get_lightweight_agent()
         else:
             async with aclosing(prepare_agent(user_id, thread_id, endpoint)) as preparation_stream:
                 async for progress, prepared_graph in preparation_stream:
@@ -480,7 +512,8 @@ async def stream_chat_response(
             yield create_sse_message({
                 "type": "progress",
                 "stage": "reasoning",
-                "message": "正在拆解需求，核验库存、预算、交期与供应商…",
+                "message": ("正在处理您的问题…" if route.mode == "lightweight"
+                            else "正在拆解需求，核验库存、预算、交期与供应商…"),
                 "thread_id": thread_id,
             })
 
@@ -877,6 +910,8 @@ async def chat_stream(request: ChatRequest, user_id: str = Depends(require_user)
     if request.thread_id:
         thread_id = request.thread_id
         await require_thread(thread_id, user_id)
+        if await agent_loader.has_pending_interrupt(thread_id):
+            raise HTTPException(409, detail="当前会话有待处理的确认事项，请先完成审批或补充信息。")
 
     # 在创建会话、记录消息、分配沙箱和调用业务 Agent 之前检查输入。
     try:

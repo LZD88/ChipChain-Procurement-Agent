@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 class UserInfoInjectionMiddleware(AgentMiddleware):
     """每次模型调用都使用本次运行的身份，明确区分用户和助手。"""
 
+    def __init__(self, *, include_preferences: bool = True):
+        self.include_preferences = include_preferences
+
     def _with_context(self, request: ModelRequest) -> ModelRequest:
         ctx = getattr(request.runtime, "context", None)
         user_id = ctx.get("user_id") if isinstance(ctx, Mapping) else getattr(ctx, "user_id", None)
@@ -32,10 +35,11 @@ class UserInfoInjectionMiddleware(AgentMiddleware):
             "登录名不能推断为真实姓名，也不要自行翻译成中文姓名。\n"
             "用户询问‘你叫什么/你是谁’时，回答‘我是 ERP 采购智能助手’，不得以 username 自称。\n"
             "历史回复如混淆了双方身份，应以本次系统提示为准并纠正。\n"
-            f"用户偏好文件路径: /memories/{user_id}/preferences.md\n"
             "问候、身份或姓名询问直接回答，无需读取或创建偏好文件、列出目录或调用业务工具。\n"
-            "处理采购任务或查询/修改偏好时，再读取偏好文件；缺失时创建默认偏好。\n"
         )
+        if self.include_preferences:
+            notice += (f"用户偏好文件路径: /memories/{user_id}/preferences.md\n"
+                       "处理采购任务或查询/修改偏好时，再读取偏好文件；缺失时创建默认偏好。\n")
         base = request.system_message
         if base is None:
             system_message = SystemMessage(content=notice)

@@ -18,6 +18,9 @@ ACTIVE_REQUESTS = Gauge("agent_active_requests", "当前活跃 Agent 请求", ("
 FIRST_TOKEN = Histogram("agent_first_token_seconds", "首 Token 延迟", ("endpoint", "model"), buckets=LATENCY_BUCKETS)
 STREAM_CHARS = Counter("agent_stream_characters_total", "SSE 输出字符数", ("model",))
 TOOL_CALLS = Counter("agent_tool_calls_total", "工具调用数", ("tool", "status"))
+REQUEST_ROUTES = Counter("agent_request_routes_total", "Selected capability path after input guard", ("route", "reason"))
+ROUTE_DURATION = Histogram("agent_route_duration_seconds", "Stream duration by capability path, excluding input guard", ("route", "status"), buckets=LATENCY_BUCKETS)
+CLASSIFIER_DURATION = Histogram("agent_request_classifier_duration_seconds", "Fallback classification latency including provider failures", ("outcome",), buckets=(.05, .1, .25, .5, 1, 2, 3, 5, 10))
 LLM_INPUT_TOKENS = Counter("agent_llm_input_tokens_total", "LLM 输入 Token", ("model",))
 LLM_OUTPUT_TOKENS = Counter("agent_llm_output_tokens_total", "LLM 输出 Token", ("model",))
 LLM_COST_USD = Counter("agent_llm_cost_usd_total", "估算模型成本（美元）", ("model",))
@@ -45,7 +48,7 @@ for _stage in ("sandbox", "graph", "sync"):
 for _cache in ("graph", "health"):
     for _result in ("hit", "miss", "invalidated"):
         RUNTIME_CACHE.labels(_cache, _result)
-for _result in ("scheduled", "pending", "ready", "skipped_capacity"):
+for _result in ("scheduled", "pending", "ready", "skipped_capacity", "deferred_routing"):
     PREPARATION_SCHEDULE.labels(_result)
 for _status in ("success", "failure", "cancelled"):
     POOL_REPLENISH.labels(_status)
@@ -99,6 +102,7 @@ def _usage(token) -> tuple[int, int]:
 @dataclass
 class StreamObservation:
     endpoint: str
+    route: str = "sandbox"
     started: float = 0.0
     first_token_seen: bool = False
     model: str = "deepseek-chat"
@@ -134,6 +138,7 @@ class StreamObservation:
         ACTIVE_REQUESTS.labels(self.endpoint).dec()
         REQUEST_DURATION.labels(self.endpoint).observe(elapsed)
         REQUESTS.labels(self.endpoint, status).inc()
+        ROUTE_DURATION.labels(self.route, status).observe(elapsed)
         LLM_INPUT_TOKENS.labels(self.model).inc(self.input_tokens)
         LLM_OUTPUT_TOKENS.labels(self.model).inc(self.output_tokens)
         input_price = float(os.getenv("DEEPSEEK_INPUT_USD_PER_M_TOKENS", "0.28"))

@@ -1,8 +1,8 @@
 """
 Agent 加载器
 
-使用 Graph Factory 模式管理 DeepAgent 实例，实现用户级沙箱隔离。
-启动时预计算工具，认证后提前准备 per-user 沙箱与可租用 graph。
+按请求能力选择只读轻量 graph 或用户级沙箱 DeepAgent。
+启动时预计算工具；完整任务按需准备沙箱，关闭分流时认证后提前准备。
 """
 
 from typing import Optional, List, Dict, Any
@@ -20,6 +20,9 @@ from agent.main_agent import create_main_agent, precompute_agent_context, Precom
 from agent.backends import sandbox_manager
 from agent.mysql_storage import mysql_storage
 from api_view.runtime_preparation import RuntimePreparation
+from agent.lightweight_agent import create_lightweight_agent
+from agent.runtime_config import RuntimeConfig
+from api_view.observability import PREPARATION_SCHEDULE
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +50,7 @@ class AgentLoader:
         self._precomputed: PrecomputedContext | None = None
         self._prewarm_task: asyncio.Task | None = None
         self._runtime: RuntimePreparation | None = None
+        self._lightweight_graph = None
 
     async def initialize(self):
         """
@@ -98,6 +102,10 @@ class AgentLoader:
     def schedule_preparation(self, user_id):
         if self._initialized:
             try:
+                if RuntimeConfig.from_env().request_routing_enabled:
+                    # Login is not evidence that the user needs a sandbox.
+                    PREPARATION_SCHEDULE.labels("deferred_routing").inc()
+                    return
                 self._preparation_runtime().schedule(user_id)
             except Exception:
                 logger.exception("后台环境调度失败，前台仍可按需准备")
@@ -108,6 +116,21 @@ class AgentLoader:
 
     async def get_agent_for_user(self, user_id: str, endpoint="chat"):
         return await self._preparation_runtime().acquire(user_id, endpoint)
+
+    def get_lightweight_agent(self):
+        if self._lightweight_graph is None:
+            self._lightweight_graph = create_lightweight_agent(
+                self._precomputed, checkpointer=mysql_storage.checkpointer,
+            )
+        return self._lightweight_graph
+
+    async def has_pending_interrupt(self, thread_id):
+        """Do not replace an interrupted graph with a different request path."""
+        checkpoint = await mysql_storage.checkpointer.aget_tuple(self.create_config(thread_id))
+        return bool(checkpoint and any(
+            # Stored checkpoint channel; inspecting it requires no sandbox graph.
+            channel == "__interrupt__" for _task, channel, _value in checkpoint.pending_writes or []
+        ))
 
     async def _build_user_graph(self, user_id, sandbox_backend):
         """Compile only after acquiring a compatible sandbox for this user."""
@@ -145,6 +168,7 @@ class AgentLoader:
             await mysql_storage.close()
             self._initialized = False
             self._precomputed = None
+            self._lightweight_graph = None
 
     def create_config(
         self,

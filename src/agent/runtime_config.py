@@ -34,6 +34,9 @@ class RuntimeConfig:
     graph_max_users: int = 32
     graph_idle_seconds: int = 1800
     prepare_timeout: float = 300
+    request_routing_enabled: bool = True
+    request_router_llm_enabled: bool = True
+    request_router_timeout_seconds: int = 5
 
     @classmethod
     def from_env(cls):
@@ -55,4 +58,7 @@ class RuntimeConfig:
             graph_enabled=_boolean("AGENT_GRAPH_CACHE_ENABLED"),
             graph_max_users=_integer("AGENT_GRAPH_CACHE_MAX_USERS", 32, 1),
             graph_idle_seconds=_integer("AGENT_GRAPH_CACHE_IDLE_SECONDS", 1800, 1),
+            request_routing_enabled=_boolean("AGENT_REQUEST_ROUTING_ENABLED"),
+            request_router_llm_enabled=_boolean("AGENT_REQUEST_ROUTER_LLM_ENABLED"),
+            request_router_timeout_seconds=_integer("AGENT_REQUEST_ROUTER_TIMEOUT_SECONDS", 5, 1, 10),
         )

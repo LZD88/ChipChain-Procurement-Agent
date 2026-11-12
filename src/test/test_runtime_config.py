@@ -17,6 +17,12 @@ class RuntimeConfigTests(unittest.TestCase):
             cfg = RuntimeConfig.from_env()
             self.assertEqual(cfg.health_ttl, 0)
             self.assertFalse(cfg.graph_enabled or cfg.background_enabled)
+        with patch.dict("os.environ", {"AGENT_REQUEST_ROUTING_ENABLED": "false"}, clear=True):
+            self.assertFalse(RuntimeConfig.from_env().request_routing_enabled)
+        with patch.dict("os.environ", {"AGENT_REQUEST_ROUTER_LLM_ENABLED": "false",
+                                       "AGENT_REQUEST_ROUTER_TIMEOUT_SECONDS": "5"}, clear=True):
+            self.assertFalse(RuntimeConfig.from_env().request_router_llm_enabled)
+            self.assertEqual(RuntimeConfig.from_env().request_router_timeout_seconds, 5)
 
     def test_invalid_and_boundary_settings(self):
         for settings in ({"SANDBOX_HEALTH_CACHE_TTL_SECONDS": "29"},
@@ -24,6 +30,11 @@ class RuntimeConfigTests(unittest.TestCase):
                          {"SANDBOX_PREWARM_TARGET": "1", "SANDBOX_PREWARM_CONCURRENCY": "2"},
                          {"AGENT_PREPARE_MAX_PENDING": "1"},
                          {"AGENT_GRAPH_CACHE_ENABLED": "maybe"},
+                         {"AGENT_REQUEST_ROUTING_ENABLED": "maybe"},
+                         {"AGENT_REQUEST_ROUTER_LLM_ENABLED": "maybe"},
+                         {"AGENT_REQUEST_ROUTER_TIMEOUT_SECONDS": "0"},
+                         {"AGENT_REQUEST_ROUTER_TIMEOUT_SECONDS": "11"},
+                         {"AGENT_REQUEST_ROUTER_TIMEOUT_SECONDS": "nan"},
                          {"AGENT_GRAPH_CACHE_MAX_USERS": "0"}):
             with self.subTest(settings=settings), patch.dict("os.environ", settings, clear=True):
                 with self.assertRaises(ValueError):

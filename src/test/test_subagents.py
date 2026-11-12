@@ -125,6 +125,20 @@ class SubagentTests(unittest.IsolatedAsyncioTestCase):
             await self.create_graph()
         self.build.assert_not_called()
 
+    async def test_light_full_and_direct_turns_share_checkpoint_history(self):
+        from agent.lightweight_agent import create_lightweight_agent
+        from api_view.agent_loader import AgentLoader
+        full, _, _ = await self.create_graph()
+        light = create_lightweight_agent(self.precomputed, checkpointer=self.storage.checkpointer, model=self.model)
+        config = {"configurable": {"thread_id": "routing-history", "user_id": "test-user"}}
+        context = {"user_id": "test-user", "username": "test-user"}
+        with patch("api_view.agent_loader.mysql_storage", self.storage):
+            direct = AgentLoader().get_direct_response_agent("你好")
+        for graph, text in [(light, "查询库存"), (full, "分析采购"), (direct, "你好"), (light, "P95是啥")]:
+            result = await graph.ainvoke({"messages": [("user", text)]}, config, context=context)
+        human = [message.content for message in result["messages"] if message.type == "human"]
+        self.assertEqual(human, ["查询库存", "分析采购", "你好", "P95是啥"])
+
     async def test_requests_keep_separate_backends_and_subagent_settings(self):
         _, first, first_sandbox = await self.create_graph("first-user")
         _, second, second_sandbox = await self.create_graph("second-user")
