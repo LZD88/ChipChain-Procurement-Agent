@@ -224,6 +224,39 @@ def test_comparison_uses_baseline_and_returns_gate_result(api):
     assert read_only.json()["candidateRunId"] == "candidate"
 
 
+def test_read_only_comparison_preserves_repeats_and_blocks_early_regression(api):
+    client, repository, _actor = api
+    baseline = repository.reports["run-completed"]
+    candidate = _report("candidate")
+    for run in (baseline, candidate):
+        run["executionMode"] = run["manifest"]["executionMode"] = "workflow-safety"
+        run["cases"] = [
+            {"scenarioId": "success", "repetition": repetition, "status": "PASSED",
+             "result": {"recommendedPartId": 1}}
+            for repetition in (1, 2, 3)
+        ]
+    candidate["cases"][0]["status"] = "FAILED"
+    repository.reports["candidate"] = candidate
+    response = client.get("/api/evaluations/comparisons", params={"candidateRunId": "candidate"})
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    payload = response.json()
+    assert len(payload["comparison"]["scenarioDiffs"]) == 3
+    assert payload["comparison"]["scenarioSummaries"][0]["after"]["passRate"] == pytest.approx(2 / 3)
+    assert payload["gates"]["passed"] is False
+    assert payload["gates"]["failures"] == [{"scenarioId": "success", "repetition": 1, "priority": "ASSERTION"}]
+
+
+def test_comparison_rejects_duplicate_case_identity_with_422(api):
+    client, repository, _actor = api
+    candidate = _report("candidate")
+    candidate["cases"].append(dict(candidate["cases"][0]))
+    repository.reports["candidate"] = candidate
+    response = client.get("/api/evaluations/comparisons", params={"candidateRunId": "candidate"})
+    assert response.status_code == 422
+    assert "duplicate evaluation case" in response.text
+
+
 def test_cli_returns_nonzero_on_gate_failure(tmp_path):
     baseline = portable_report(_report())
     candidate = portable_report(_report("candidate"))
