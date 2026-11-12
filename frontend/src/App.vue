@@ -50,7 +50,7 @@ onBeforeUnmount(() => window.removeEventListener('auth:expired', sessionExpired)
 
 <style scoped>
 .session-loading { min-height: 100dvh; display: flex; align-items: center; justify-content: center; gap: 14px; color: #647078; }
-.session-spinner { width: 20px; height: 20px; border: 2px solid #ddd6ca; border-top-color: #34574e; border-radius: 50%; animation: spin 1s linear infinite; }
+.session-spinner { width: 20px; height: 20px; border: 2px solid var(--color-border); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 1s linear infinite; }
 .account-error { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 100; padding: 12px 20px; border-radius: 12px; background: #fff1e8; color: #9b3928; box-shadow: 0 4px 20px #0001; }
 .account-error button { background: none; border: 0; margin-left: 12px; cursor: pointer; }
 @keyframes spin { to { transform: rotate(360deg); } }

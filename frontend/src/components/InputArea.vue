@@ -159,14 +159,14 @@ defineExpose({ focus })
 .input-container { width: 100%; max-width: var(--conversation-width); margin: 0 auto; }
 .input-wrapper {
   padding: 16px 16px 12px;
-  border: 1px solid #dcded5;
+  border: 1px solid var(--color-border);
   border-radius: 22px;
   background: #fff;
   box-shadow: 0 2px 9px #26302606;
   transition: border-color .16s, box-shadow .16s;
 }
-.input-wrapper.focused { border-color: #a6b3a0; box-shadow: 0 0 0 2px #90a28512, 0 3px 12px #26302608; }
-.input-wrapper.streaming { background: #fdfefb; }
+.input-wrapper.focused { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-focus), 0 3px 12px #26302608; }
+.input-wrapper.streaming { background: var(--color-bg-secondary); }
 .input-textarea {
   display: block;
   width: 100%;
@@ -176,25 +176,25 @@ defineExpose({ focus })
   border: 0;
   outline: none;
   background: transparent;
-  color: #29352d;
+  color: var(--color-text);
   font: inherit;
   font-size: 15px;
   line-height: 1.65;
   resize: none;
 }
-.input-textarea::placeholder { color: #747d71; }
-.input-textarea:disabled { color: #687161; cursor: default; opacity: 1; }
+.input-textarea::placeholder { color: var(--color-text-muted); }
+.input-textarea:disabled { color: var(--color-text-secondary); cursor: default; opacity: 1; }
 .composer-toolbar, .composer-actions { display: flex; align-items: center; gap: 12px; }
 .composer-toolbar { justify-content: space-between; gap: 10px; }
 .composer-actions { margin-left: auto; }
-.toggle-label { position: relative; display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 5px 9px; border: 1px solid #daddd3; border-radius: 8px; background:#f5f6f2; color: #606b58; font:inherit; cursor: pointer; user-select: none; }
-.toggle-label.is-on { color: #36553b; background: #edf4e8; border-color:#bdcfb4; }
-.toggle-label:hover { background: #e9eee4; }
-.toggle-label:focus-visible { outline: 2px solid #869e79; outline-offset: 2px; }
+.toggle-label { position: relative; display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 5px 9px; border: 1px solid var(--color-border); border-radius: 8px; background:var(--color-bg-tertiary); color: var(--color-text-secondary); font:inherit; cursor: pointer; user-select: none; }
+.toggle-label.is-on { color: var(--color-primary); background: var(--color-primary-soft); border-color:var(--color-primary-line); }
+.toggle-label:hover { background: var(--color-bg-hover); }
+.toggle-label:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .toggle-state{font-size:12px;font-weight:600}
-.toggle-switch{box-sizing:content-box;flex-shrink:0;display:inline-flex;align-items:center;width:23px;height:12px;margin-left:2px;padding:2px;border-radius:20px;background:#9ba391;transition:background .15s}
+.toggle-switch{box-sizing:content-box;flex-shrink:0;display:inline-flex;align-items:center;width:23px;height:12px;margin-left:2px;padding:2px;border-radius:20px;background:var(--color-text-muted);transition:background .15s}
 .toggle-switch i{width:12px;height:12px;display:block;border-radius:50%;background:#fff;transition:transform .15s}
-.is-on .toggle-switch{background:#55764a}
+.is-on .toggle-switch{background:var(--color-primary)}
 .is-on .toggle-switch i{transform:translateX(11px)}
 .process-icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .toggle-text { font-size: 12px; font-weight: 550; }
@@ -208,22 +208,22 @@ defineExpose({ focus })
   padding: 7px;
   border: 0;
   border-radius: 50%;
-  background: #354a39;
+  background: var(--color-primary);
   color: #fff;
   cursor: pointer;
   transition: background .15s;
 }
 .send-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.send-btn:hover:not(:disabled), .stop-btn:hover { background: #203825; }
-.send-btn:disabled { background: #eeefe9; color: #a3ab9c; cursor: default; }
-.send-btn:focus-visible, .stop-btn:focus-visible { outline: 2px solid #7a9770; outline-offset: 3px; }
+.send-btn:hover:not(:disabled), .stop-btn:hover { background: var(--color-primary-hover); }
+.send-btn:disabled { background: var(--color-bg-tertiary); color: var(--color-text-muted); cursor: default; }
+.send-btn:focus-visible, .stop-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
 .stop-icon { width: 11px; height: 11px; border-radius: 2px; background: currentColor; }
-.streaming-hint { font-size: 12px; color: #64735d; }
-.composer-footnote { margin: 9px 0 0; text-align: center; color: #757d70; font-size: 11px; line-height: 1.5; }
-.composer-context { display: flex; align-items: center; gap: 7px; margin-bottom: 12px; padding: 0 3px; color: #58684f; }
+.streaming-hint { font-size: 12px; color: var(--color-text-secondary); }
+.composer-footnote { margin: 9px 0 0; text-align: center; color: var(--color-text-muted); font-size: 11px; line-height: 1.5; }
+.composer-context { display: flex; align-items: center; gap: 7px; margin-bottom: 12px; padding: 0 3px; color: var(--color-text-secondary); }
 .composer-context svg { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
 .composer-context strong { overflow: hidden; font-size: 12px; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
-.composer-context > span { margin-left: auto; flex-shrink: 0; color: #6f7b64; font-size: 11px; }
+.composer-context > span { margin-left: auto; flex-shrink: 0; color: var(--color-text-muted); font-size: 11px; }
 @media (max-width: 760px) {
   .input-area { padding: 8px 12px max(10px, env(safe-area-inset-bottom)); }
   .input-wrapper { padding: 14px 13px 10px; border-radius: 18px; }

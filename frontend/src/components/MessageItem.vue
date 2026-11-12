@@ -97,15 +97,15 @@ function getAvatarClass(source) {
 </script>
 
 <style scoped>
-.response-process { margin: 0 0 14px; border: 1px solid #e5dbd1; border-radius: 10px; background: #f8f3ed; }
-.response-process > summary { cursor: pointer; padding: 11px 14px; color: #776a60; font-size: 12px; }
-.response-process > summary:focus-visible { outline: 2px solid #a36a4f; outline-offset: 2px; }
+.response-process { margin: 0 0 14px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-bg-secondary); }
+.response-process > summary { cursor: pointer; padding: 11px 14px; color: var(--color-text-secondary); font-size: 12px; }
+.response-process > summary:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .response-process :deep(.tool-call-panel) { margin: 10px 14px 16px; }
-.process-note { padding: 10px 14px; font-size: 13px; color: #756961; border-top: 1px solid #e5dbd1; }
+.process-note { padding: 10px 14px; font-size: 13px; color: var(--color-text-secondary); border-top: 1px solid var(--color-border); }
 .process-note > span { font-size: 11px; }
-.reply-status { color: #756961; font-size: 13px; }
-.reply-status.active::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 9px; border-radius: 50%; background: #d1865f; box-shadow: 0 0 0 0 rgba(209,134,95,.38); animation: status-pulse 1.5s ease-out infinite; }
-@keyframes status-pulse { 70% { box-shadow: 0 0 0 7px rgba(209,134,95,0); } 100% { box-shadow: 0 0 0 0 rgba(209,134,95,0); } }
+.reply-status { color: var(--color-text-secondary); font-size: 13px; }
+.reply-status.active::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 9px; border-radius: 50%; background: var(--color-primary); box-shadow: 0 0 0 0 rgba(22,134,109,.26); animation: status-pulse 1.5s ease-out infinite; }
+@keyframes status-pulse { 70% { box-shadow: 0 0 0 7px rgba(22,134,109,0); } 100% { box-shadow: 0 0 0 0 rgba(22,134,109,0); } }
 /* ============================================================ */
 /* 基础布局 */
 /* ============================================================ */
@@ -143,12 +143,12 @@ function getAvatarClass(source) {
 
 /* 主 Agent AI 标签 */
 .label-bar-main .msg-role-badge {
-  color: #66705e;
+  color: var(--color-primary);
 }
 
 /* 子 Agent AI 标签 */
 .label-bar-sub .msg-role-badge {
-  color: #66705e;
+  color: var(--color-primary);
 }
 
 .msg-source-badge {
@@ -161,8 +161,8 @@ function getAvatarClass(source) {
 }
 
 .label-bar-sub .msg-source-badge {
-  background: #f4ece4;
-  color: #725c4f;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
 }
 
 /* ============================================================ */
@@ -178,14 +178,14 @@ function getAvatarClass(source) {
 }
 
 .message-user .message-content {
-  background: #eeeee7;
+  background: var(--color-primary-soft);
   border: 0;
   border-radius: 18px;
   padding: 14px 18px;
 }
 
 .message-user .content-text {
-  color: #354031;
+  color: var(--color-text);
   font-size: 15px;
   line-height: 1.7;
   text-align: left;
@@ -237,7 +237,7 @@ function getAvatarClass(source) {
 .typing-cursor {
   display: inline-block;
   animation: blink 1s infinite;
-  color: #a86649;
+  color: var(--color-primary);
   margin-left: 3px;
   font-weight: bold;
 }

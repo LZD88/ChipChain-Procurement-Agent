@@ -1,30 +1,41 @@
-/** 自有 ERP 工作台主题：安静、清晰、避免通用聊天产品的视觉套路。 */
+/** Shared workspace palette: matches ERP and Agent observability. */
 
 /* ============================================================
    CSS 变量定义 - 浅色主题配色方案
    ============================================================ */
 :root {
-  /* 颜色变量 - 参考 ChatGPT/DeepSeek 风格 */
-  --color-primary: #ee6c4d;
-  --color-primary-hover: #d9573b;
-  --color-secondary: #1f3a4d;
-  --color-accent: #d9a441;
-  --color-bg: #f6f2eb;
-  --color-bg-secondary: #fbfaf7;
-  --color-bg-tertiary: #ece8df;
-  --color-bg-hover: #e8e1d5;
+  color-scheme: light;
+  --color-primary: #16866d;
+  --color-primary-hover: #116d59;
+  --color-secondary: #202c3e;
+  --color-accent: #437bd1;
+  --color-bg: #f5f7fa;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #edf2f7;
+  --color-bg-hover: #e8eef4;
   --color-white: #ffffff;
-  --color-border: #ddd6ca;
-  --color-border-light: #eee9e0;
-  --color-text: #1f2d35;
-  --color-text-secondary: #647078;
-  --color-text-muted: #92948f;
+  --color-border: #dce3eb;
+  --color-border-light: #e5eaf0;
+  --color-text: #202c3e;
+  --color-text-secondary: #58677b;
+  --color-text-muted: #738094;
+  --color-primary-soft: #eaf5f1;
+  --color-primary-line: #b9dacf;
+  --color-focus: #16866d26;
+  --nav-bg: #152435;
+  --nav-surface: #1e3247;
+  --nav-hover: #2b435b;
+  --nav-active: #235e52;
+  --nav-border: #344b62;
+  --nav-text: #e2ebf5;
+  --nav-muted: #b8c9db;
+  --nav-accent: #adf2db;
 
   /* 阴影 - 柔和效果 */
   --shadow-sm: 0 1px 2px rgba(38, 42, 39, 0.05);
   --shadow-md: 0 8px 24px rgba(38, 42, 39, 0.08);
   --shadow-lg: 0 18px 40px rgba(38, 42, 39, 0.12);
-  --shadow-glow: 0 0 24px rgba(238, 108, 77, 0.16);
+  --shadow-glow: 0 0 24px rgba(22, 134, 109, 0.12);
 
   /* 圆角 - 柔和圆润 */
   --radius-sm: 8px;
@@ -52,7 +63,7 @@ html, body, #app {
 }
 
 body {
-  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--color-bg);
@@ -137,7 +148,7 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  background: var(--color-primary);
   color: white;
   box-shadow: var(--shadow-md);
 }

@@ -107,7 +107,7 @@ function retryImage(event) {
   border-radius: 6px;
   font-family: 'Monaco', 'Menlo', 'JetBrains Mono', monospace;
   font-size: 14px;
-  color: #0ea5e9;
+  color: var(--color-primary);
 }
 
 .markdown-renderer pre {
@@ -176,14 +176,14 @@ function retryImage(event) {
 
 /* ============ 链接样式 ============ */
 .markdown-renderer a {
-  color: #0ea5e9;
+  color: var(--color-primary);
   text-decoration: none;
   border-bottom: 1px solid transparent;
   transition: all 0.2s ease;
 }
 
 .markdown-renderer a:hover {
-  border-bottom-color: #0ea5e9;
+  border-bottom-color: var(--color-primary);
 }
 
 /* ============ 图片样式（兜底，内联 style 已处理主要约束）============ */
@@ -206,13 +206,13 @@ function retryImage(event) {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   margin: 10px 0;
-  color: #0ea5e9;
+  color: var(--color-primary);
   transition: all 0.2s ease;
 }
 
 .markdown-renderer a.image-link:hover {
   background: #e0f2fe;
-  border-color: #0ea5e9;
+  border-color: var(--color-primary);
 }
 
 /* ============ 表格样式 ============ */
@@ -220,14 +220,14 @@ function retryImage(event) {
   width: 100%;
   overflow-x: auto;
   margin: 16px 0;
-  border: 1px solid #e0e4da;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
 }
-.markdown-table-wrap:focus-visible { outline: 2px solid #879a7d; outline-offset: 3px; }
+.markdown-table-wrap:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
 .markdown-table-wrap table { margin: 0; min-width: 100%; }
 .markdown-table-wrap th, .markdown-table-wrap td { white-space: nowrap; }
-.markdown-renderer .markdown-table-wrap th { background: #f1f4ed; color: #354631; }
-.markdown-table-wrap tbody tr:nth-child(2n) { background: #f7f8f4; }
+.markdown-renderer .markdown-table-wrap th { background: var(--color-bg-tertiary); color: var(--color-text); }
+.markdown-table-wrap tbody tr:nth-child(2n) { background: var(--color-bg); }
 .markdown-renderer table {
   width: 100%;
   border-collapse: collapse;
@@ -261,7 +261,7 @@ function retryImage(event) {
   margin: 14px 0;
   padding: 14px 18px;
   background: #f8fafc;
-  border-left: 4px solid #0ea5e9;
+  border-left: 4px solid var(--color-primary);
   border-radius: 0 8px 8px 0;
   color: #64748b;
   font-style: italic;
@@ -279,7 +279,7 @@ function retryImage(event) {
 .markdown-renderer input[type="checkbox"] {
   margin-right: 10px;
   vertical-align: middle;
-  accent-color: #0ea5e9;
+  accent-color: var(--color-primary);
 }
 
 .markdown-renderer input[type="checkbox"]:checked + span {
@@ -291,6 +291,6 @@ function retryImage(event) {
 <style>
 .markdown-image { max-width: 100%; max-height: 520px; height: auto; object-fit: contain; border-radius: 12px; margin: 12px 0; }
 .markdown-image-wrap { display: block; }
-.markdown-renderer .image-error:not([hidden]) { display: block; padding: 18px; margin: 12px 0; background: #f7f3ed; color: #80664b; border-radius: 10px; font-size: 13px; }
-.markdown-renderer .image-error button { margin-left: 10px; padding: 5px 10px; cursor: pointer; border: 1px solid #cebc9e; background: white; border-radius: 6px; }
+.markdown-renderer .image-error:not([hidden]) { display: block; padding: 18px; margin: 12px 0; background: var(--color-bg-tertiary); color: var(--color-text-secondary); border-radius: 10px; font-size: 13px; }
+.markdown-renderer .image-error button { margin-left: 10px; padding: 5px 10px; cursor: pointer; border: 1px solid var(--color-border); background: white; border-radius: 6px; }
 </style>
