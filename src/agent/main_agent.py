@@ -149,6 +149,7 @@ async def create_main_agent(
     *,
     sandbox_backend: SandboxBackendProtocol,
     precomputed: PrecomputedContext,
+    prompt_snapshot=None,
 ):
     """创建 ERP 采购智能助手的用户 graph，供准备注册表缓存和租用。
 
@@ -214,81 +215,9 @@ async def create_main_agent(
             if tool.name in {"procurement_compare", "order_create"}
             else tool
         )
-    procurement_analyst: SubAgent = {
-        "name": "procurement-analyst",
-        "description": (
-            "采购分析专家。负责基于确定性规则的供应商比价、物料行情分析、采购策略建议、 "
-            "市场调研、成本评估等需要多步数据收集和深度分析的任务。 "
-            '当用户需求涉及"分析"、"对比"、"报告"、"建议"、"评估"、 '
-            '"行情"、"比价"、"筛选"等关键词时，应委派给此子 Agent。'
-        ),
-        "system_prompt": PROCUREMENT_ANALYST_PROMPT,
-        "tools": [
-            mcp_tools["supplier_query"],
-            mcp_tools["part_query"],
-            mcp_tools["part_search"],
-            mcp_tools["part_by_supplier"],
-            mcp_tools["order_search_details"],
-            mcp_tools["inventory_warning"],
-            mcp_tools["procurement_compare"],
-            precomputed.chart_tool,
-            web_search,
-        ],
-        "skills": ["/skills/procurement/"],
-        "middleware": create_analyst_middleware(SUMMARY_MODEL, backend),
-    }
-    procurement_order: SubAgent = {
-        "name": "procurement-order",
-        "description": (
-            "采购订单管理专家。负责基于确定性比价结果创建待审核采购单、修改待审核订单的 "
-            "交货日期/备注/物料明细，以及与采购订单相关的查询操作。订单状态流转由采购人员完成。 "
-            '当用户需求涉及"下单"、"创建订单"、"修改采购单"、"更新订单"、 '
-            '"订单状态查询"、"交期变更"等关键词时，应委派给此子 Agent。'
-        ),
-        "system_prompt": PROCUREMENT_ORDER_PROMPT,
-        "tools": [
-            mcp_tools["procurement_compare"],
-            mcp_tools["order_create"],
-            mcp_tools["order_update"],
-            mcp_tools["order_search_details"],
-            web_search,
-            request_order_info,
-        ],
-        "skills": ["/skills/order/"],
-        "interrupt_on": {
-            "order_create": {"allowed_decisions": ["approve", "reject"]},
-            "order_update": {"allowed_decisions": ["approve", "reject"]},
-        },
-        "middleware": create_order_middleware(),
-    }
-    procurement_orchestrator: SubAgent = {
-        "name": "procurement-orchestrator",
-        "description": (
-            "端到端采购闭环编排专家。负责把自然语言采购需求依次转换为物料匹配、"
-            "库存核验、供应商状态与信用核验、预算/交期/MOQ 校验、可解释推荐方案，"
-            "并在人工批准后创建待审核采购订单。用户说‘帮我采购/需要采购/从需求到下单/"
-            "给出方案并执行’时必须委派给此 Agent；不要拆分给分析和订单两个 Agent。"
-        ),
-        "system_prompt": PROCUREMENT_ORCHESTRATOR_PROMPT,
-        "tools": [
-            mcp_tools["part_query"],
-            mcp_tools["part_search"],
-            mcp_tools["part_by_supplier"],
-            mcp_tools["inventory_query"],
-            mcp_tools["inventory_warning"],
-            mcp_tools["supplier_get"],
-            mcp_tools["supplier_query"],
-            mcp_tools["order_search_details"],
-            mcp_tools["procurement_compare"],
-            mcp_tools["order_create"],
-            request_order_info,
-        ],
-        "skills": ["/skills/procurement/", "/skills/order/"],
-        "interrupt_on": {
-            "order_create": {"allowed_decisions": ["approve", "reject"]},
-        },
-        "middleware": create_order_middleware(),
-    }
+    from agent.role_factory import build_role_definitions
+    role_definitions = build_role_definitions(precomputed, mcp_tools, backend, SUMMARY_MODEL,
+                                               web_search, request_order_info, prompt_snapshot)
 
     # ---- Phase 4: 主 Agent 中间件栈 ----
     main_middleware = [
@@ -322,13 +251,15 @@ async def create_main_agent(
     ]
 
     # ---- Phase 5: create_deep_agent ----
-    agent_graph = create_deep_agent(
+    from agent.graph_factory import build_procurement_graph
+    agent_graph = build_procurement_graph(
+        factory=create_deep_agent,
         model=MAIN_MODEL,
-        system_prompt=system_prompt,
+        system_prompt=prompt_snapshot.prompt("main") if prompt_snapshot else system_prompt,
         skills=["/skills/main/"],
-        memory=[AGENTS_MD_FILENAME],
+        memory=[AGENTS_MD_FILENAME, f"/memories/{user_id}/preferences.md"],
         tools=[web_search, assign_skill, download_sandbox_file],
-        subagents=[procurement_orchestrator, procurement_analyst, procurement_order],
+        subagents=role_definitions,
         middleware=main_middleware,
         backend=backend,
         store=STORE,

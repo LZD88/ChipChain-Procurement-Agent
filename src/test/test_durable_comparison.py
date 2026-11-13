@@ -51,6 +51,28 @@ def test_durable_id_is_deterministic_across_source_order_and_covers_no_solution(
     assert returned["decisionId"].startswith("DEC-")
 
 
+@pytest.mark.asyncio
+async def test_fresh_signed_comparisons_do_not_collide_or_overwrite_history():
+    comparison = result()
+    def acquire(nonce, thread="thread-1"):
+        return build_durable_evidence(identity={**identity(), "nonce": nonce, "thread": thread},
+            request=comparison["request"], source=source(), result=comparison)
+    first, first_return = acquire("signed-acquisition-1")
+    second, second_return = acquire("signed-acquisition-2")
+    other_thread, _ = acquire("signed-acquisition-1", "thread-2")
+    assert len({first.decision_id, second.decision_id, other_thread.decision_id}) == 3
+    assert first.evidence_fingerprint == second.evidence_fingerprint == other_thread.evidence_fingerprint
+    assert first_return["decisionId"] != second_return["decisionId"]
+    assert first.result == second.result
+    storage = FakeStorage()
+    repository = DecisionRepository(storage)
+    await repository.insert(first)
+    await repository.insert(second)
+    assert len(storage.decisions) == 2
+    assert (await repository.get_for_owner(first.decision_id, "alice"))["thread_id"] == "thread-1"
+    assert (await repository.get_for_owner(first.decision_id, "bob")) is None
+
+
 class UnavailableStorage:
     @asynccontextmanager
     async def cursor(self, transaction=False):

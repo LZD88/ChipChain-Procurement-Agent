@@ -7,6 +7,9 @@ There is intentionally no process-local decision snapshot fallback.
 
 from __future__ import annotations
 
+import hashlib
+import json
+
 import time
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
@@ -53,7 +56,16 @@ def build_durable_evidence(
         source=clean_source,
         result=clean_result,
     )
-    decision_id = decision_id_from_fingerprint(fingerprint)
+    # Evidence content stays reproducible, while each verified acquisition has
+    # its own owner/thread/nonce-scoped ID. Repeating a comparison must not
+    # collide with an expired or claimed historic decision. Existing decisions
+    # and callers without an invocation nonce retain their legacy ID format.
+    nonce = identity.get("nonce")
+    identity_hash = hashlib.sha256(json.dumps(
+        [fingerprint, identity["sub"], identity["thread"], nonce],
+        ensure_ascii=False, separators=(",", ":"),
+    ).encode("utf-8")).hexdigest() if nonce else fingerprint
+    decision_id = decision_id_from_fingerprint(identity_hash)
     created = now or datetime.now(timezone.utc).replace(tzinfo=None)
     evidence = DecisionEvidence(
         decision_id=decision_id,

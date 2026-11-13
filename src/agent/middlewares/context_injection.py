@@ -39,7 +39,8 @@ class UserInfoInjectionMiddleware(AgentMiddleware):
         )
         if self.include_preferences:
             notice += (f"用户偏好文件路径: /memories/{user_id}/preferences.md\n"
-                       "处理采购任务或查询/修改偏好时，再读取偏好文件；缺失时创建默认偏好。\n")
+                       "已有偏好已由服务端记忆加载，直接复用；缺失时本轮使用默认值，不创建文件。"
+                       "只有明确查询/修改偏好时才读写自己的偏好文件。\n")
         base = request.system_message
         if base is None:
             system_message = SystemMessage(content=notice)
