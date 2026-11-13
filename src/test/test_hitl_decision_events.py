@@ -75,6 +75,7 @@ async def test_resume_appends_approval_or_rejection_without_mutating_evidence(de
         thread_id="thread-1",
         user_id="alice",
         action_requests=action_request(),
+        prompt_metadata={"promptVersion": "v2", "promptFingerprint": "f" * 64, "promptReleaseRevision": 2},
     ) == 1
     await record_hitl_resume_events(
         repository,
@@ -86,6 +87,8 @@ async def test_resume_appends_approval_or_rejection_without_mutating_evidence(de
         "APPROVAL_REQUESTED", event_type,
     ]
     assert repository.evidence == repository.original
+    assert all(event["payload"]["promptVersion"] == "v2" for event in repository.events)
+    assert all(event["payload"]["promptReleaseRevision"] == 2 for event in repository.events)
 
 
 @pytest.mark.asyncio

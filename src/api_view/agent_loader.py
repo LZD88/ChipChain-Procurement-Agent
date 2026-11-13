@@ -10,6 +10,7 @@ import asyncio
 from contextlib import suppress
 import logging
 import uuid
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from deepagents import DeepAgentState
@@ -23,8 +24,16 @@ from api_view.runtime_preparation import RuntimePreparation
 from agent.lightweight_agent import create_lightweight_agent
 from agent.runtime_config import RuntimeConfig
 from api_view.observability import PREPARATION_SCHEDULE
+from agent.prompt_releases.repository import enabled as prompt_releases_enabled
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class PromptUserKey:
+    user_id: str
+    bundle_fingerprint: str
+    snapshot: object
 
 
 # CheckpointTuple 到 StateSnapshot 的轻量适配器
@@ -51,6 +60,8 @@ class AgentLoader:
         self._prewarm_task: asyncio.Task | None = None
         self._runtime: RuntimePreparation | None = None
         self._lightweight_graph = None
+        self._lightweight_versions = {}
+        self._prompt_janitor = None
 
     async def initialize(self):
         """
@@ -75,6 +86,8 @@ class AgentLoader:
             self._preparation_runtime()
 
             self._initialized = True
+            if prompt_releases_enabled() and self._prompt_janitor is None:
+                self._prompt_janitor = asyncio.create_task(self._cleanup_prompt_samples())
             # 4. 沙箱预热放到后台。OpenSandbox 变慢或暂时异常时，API 仍应先开始
             # 监听并返回健康状态，不能让整个聊天页面卡在连接阶段。
             if self._prewarm_task is None or self._prewarm_task.done():
@@ -93,6 +106,16 @@ class AgentLoader:
         except Exception:
             logger.exception("后台预热沙箱失败；API 保持可用，首次请求时将按需恢复")
 
+    async def _cleanup_prompt_samples(self):
+        from agent.prompt_releases.repository import PromptRepository
+        while True:
+            try:
+                while await PromptRepository(mysql_storage).cleanup() == 1000:
+                    await asyncio.sleep(0)
+            except Exception:
+                logger.exception("提示词样本保留清理失败")
+            await asyncio.sleep(300)
+
     def _preparation_runtime(self):
         if self._runtime is None:
             self._runtime = RuntimePreparation(self._build_user_graph,
@@ -102,7 +125,7 @@ class AgentLoader:
     def schedule_preparation(self, user_id):
         if self._initialized:
             try:
-                if RuntimeConfig.from_env().request_routing_enabled:
+                if RuntimeConfig.from_env().request_routing_enabled or prompt_releases_enabled():
                     # Login is not evidence that the user needs a sandbox.
                     PREPARATION_SCHEDULE.labels("deferred_routing").inc()
                     return
@@ -113,11 +136,29 @@ class AgentLoader:
     async def logout_preparation(self, user_id):
         if self._runtime is not None:
             await self._runtime.logout(user_id)
+            for key in list(self._runtime.pending):
+                if getattr(key, "user_id", None) == user_id:
+                    await self._runtime.logout(key)
 
-    async def get_agent_for_user(self, user_id: str, endpoint="chat"):
-        return await self._preparation_runtime().acquire(user_id, endpoint)
+    async def get_agent_for_user(self, user_id: str, endpoint="chat", prompt_snapshot=None):
+        key = PromptUserKey(user_id, prompt_snapshot.fingerprint, prompt_snapshot) if prompt_snapshot else user_id
+        return await self._preparation_runtime().acquire(key, endpoint)
 
-    def get_lightweight_agent(self):
+    def get_lightweight_agent(self, prompt_snapshot=None):
+        if prompt_snapshot:
+            key = (agent_fingerprint(self._precomputed), prompt_snapshot.fingerprint)
+            for old_key, (_, touched) in list(self._lightweight_versions.items()):
+                if time.monotonic() - touched > 1800:
+                    self._lightweight_versions.pop(old_key, None)
+            if key not in self._lightweight_versions:
+                graph = create_lightweight_agent(self._precomputed, checkpointer=mysql_storage.checkpointer,
+                                                 prompt_snapshot=prompt_snapshot)
+                if len(self._lightweight_versions) >= 8:
+                    self._lightweight_versions.pop(next(iter(self._lightweight_versions)))
+                self._lightweight_versions[key] = (graph, time.monotonic())
+            graph, _ = self._lightweight_versions.pop(key)
+            self._lightweight_versions[key] = (graph, time.monotonic())
+            return graph
         if self._lightweight_graph is None:
             self._lightweight_graph = create_lightweight_agent(
                 self._precomputed, checkpointer=mysql_storage.checkpointer,
@@ -134,11 +175,14 @@ class AgentLoader:
 
     async def _build_user_graph(self, user_id, sandbox_backend):
         """Compile only after acquiring a compatible sandbox for this user."""
-        config = self.create_config(user_id=user_id)
+        snapshot = getattr(user_id, "snapshot", None)
+        config = self.create_config(user_id=getattr(user_id, "user_id", user_id))
+        options = {"prompt_snapshot": snapshot} if snapshot else {}
         return await create_main_agent(
             config,
             sandbox_backend=sandbox_backend,
             precomputed=self._precomputed,
+            **options,
         )
 
     def get_direct_response_agent(self, response: str):
@@ -155,6 +199,10 @@ class AgentLoader:
     async def shutdown(self) -> None:
         """应用关闭时清理所有沙箱和 MySQL 连接池。"""
         try:
+            if self._prompt_janitor is not None:
+                self._prompt_janitor.cancel()
+                await asyncio.gather(self._prompt_janitor, return_exceptions=True)
+                self._prompt_janitor = None
             if self._runtime is not None:
                 await self._runtime.close()
                 self._runtime = None
@@ -169,6 +217,7 @@ class AgentLoader:
             self._initialized = False
             self._precomputed = None
             self._lightweight_graph = None
+            self._lightweight_versions.clear()
 
     def create_config(
         self,

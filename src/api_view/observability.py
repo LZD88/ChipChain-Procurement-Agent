@@ -109,6 +109,7 @@ class StreamObservation:
     input_tokens: int = 0
     output_tokens: int = 0
     closed: bool = False
+    outcome: str = "cancelled"
 
     def start(self) -> "StreamObservation":
         self.started = time.perf_counter()
@@ -134,6 +135,7 @@ class StreamObservation:
         if self.closed:
             return
         self.closed = True
+        self.outcome = status
         elapsed = time.perf_counter() - self.started
         ACTIVE_REQUESTS.labels(self.endpoint).dec()
         REQUEST_DURATION.labels(self.endpoint).observe(elapsed)

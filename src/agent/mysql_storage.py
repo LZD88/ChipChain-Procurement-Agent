@@ -368,10 +368,16 @@ APPLICATION_DDL = {
 }
 
 
+from agent.prompt_releases.ddl import DDL as PROMPT_DDL
+APPLICATION_DDL.update(PROMPT_DDL)
+
+
 async def _ensure_application_tables(cur):
     """Create only missing application tables in dependency-safe order."""
     for table_name, ddl in APPLICATION_DDL.items():
         await _create_table_if_missing(cur, table_name, ddl)
+    from agent.prompt_releases.ddl import ensure_immutable_versions
+    await ensure_immutable_versions(cur)
 
 
 def _json_default(value):

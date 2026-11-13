@@ -33,10 +33,14 @@ async def lifespan(app: FastAPI):
     started = perf_counter()
     logger.info("正在初始化采购助手...")
     await agent_loader.initialize()
+    from api_view.integrations import platform_integrations
+    from agent.mysql_storage import mysql_storage
+    await platform_integrations.start(mysql_storage)
     logger.info("采购助手就绪，初始化耗时 %.1f 秒", perf_counter() - started)
     try:
         yield
     finally:
+        await platform_integrations.stop()
         await agent_loader.shutdown()
         logger.info("采购助手资源已释放")
 
@@ -77,6 +81,10 @@ app.include_router(chat.router, prefix="/api", tags=["对话"])
 app.include_router(history.router, prefix="/api", tags=["历史记录"])
 app.include_router(decisions.router, prefix="/api", tags=["决策证据"])
 app.include_router(evaluations.router, prefix="/api", tags=["决策评测"])
+from api_view.api import prompt_releases
+app.include_router(prompt_releases.router, prefix="/api", tags=["提示词发布"])
+from api_view.api import integrations
+app.include_router(integrations.router, prefix="/api", tags=["配置与观测"])
 
 
 # ============================================================

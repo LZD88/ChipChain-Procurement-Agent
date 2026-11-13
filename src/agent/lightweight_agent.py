@@ -3,7 +3,6 @@ from deepagents import DeepAgentState
 from langchain.agents import create_agent
 from langchain.agents.middleware import ModelCallLimitMiddleware, ToolCallLimitMiddleware
 
-from agent.config import MAIN_MODEL
 from agent.middlewares.context_injection import UserInfoInjectionMiddleware
 from agent.middlewares.tool_error import ToolErrorMiddleware
 from agent.request_routing import READ_ONLY_TOOLS
@@ -22,12 +21,15 @@ LIGHTWEIGHT_PROMPT = """你是 ERP 采购智能助手，始终使用简体中文
 """
 
 
-def create_lightweight_agent(precomputed, *, checkpointer, model=None):
+def create_lightweight_agent(precomputed, *, checkpointer, model=None, prompt_snapshot=None):
+    if model is None:
+        from agent.config import MAIN_MODEL
+        model = MAIN_MODEL
     tools = {tool.name: tool for tool in [*precomputed.analyst_mcp_tools, *precomputed.order_mcp_tools]
              if tool.name in READ_ONLY_TOOLS}
     return create_agent(
-        model=model if model is not None else MAIN_MODEL,
-        system_prompt=LIGHTWEIGHT_PROMPT,
+        model=model,
+        system_prompt=prompt_snapshot.prompt("lightweight") if prompt_snapshot else LIGHTWEIGHT_PROMPT,
         tools=list(tools.values()),
         middleware=[
             ToolErrorMiddleware(), UserInfoInjectionMiddleware(include_preferences=False),

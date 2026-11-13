@@ -8,7 +8,9 @@ import os
 DECISION_AUDIT = "decision:audit"
 EVALUATION_VIEW = "evaluation:view"
 EVALUATION_MAINTAIN = "evaluation:maintain"
-KNOWN_CAPABILITIES = frozenset({DECISION_AUDIT, EVALUATION_VIEW, EVALUATION_MAINTAIN})
+PROMPT_VIEW = "prompt:view"
+PROMPT_MAINTAIN = "prompt:maintain"
+KNOWN_CAPABILITIES = frozenset({DECISION_AUDIT, EVALUATION_VIEW, EVALUATION_MAINTAIN, PROMPT_VIEW, PROMPT_MAINTAIN})
 
 
 def validate_capability(capability: str) -> str:

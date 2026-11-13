@@ -78,7 +78,7 @@ class RuntimePreparation:
                 self.changed.notify_all()
 
     def _compatible(self, entry, user, fingerprint):
-        proxy = sandbox_manager.SANDBOX_BACKENDS.get(user)
+        proxy = sandbox_manager.SANDBOX_BACKENDS.get(getattr(user, "user_id", user))
         return (entry.user == user and entry.proxy is proxy
                 and entry.generation == getattr(proxy, "generation", 0)
                 and entry.fingerprint == fingerprint
@@ -87,8 +87,11 @@ class RuntimePreparation:
     def _cached(self, user):
         if not self.config.graph_enabled:
             return None
-        fingerprint = self.fingerprint()
+        fingerprint = self._fingerprint(user)
         return next((e for e in self.entries if self._compatible(e, user, fingerprint)), None)
+
+    def _fingerprint(self, user):
+        return self.fingerprint() + getattr(user, "bundle_fingerprint", "")
 
     def schedule(self, user):
         if self.stopping or not self.config.background_enabled:
@@ -152,15 +155,16 @@ class RuntimePreparation:
             async with self.slots:
                 with preparation_measure(PREPARATION_DURATION, trigger, deadline=deadline):
                     await self._reserve(user)
-                    had_sandbox = user in sandbox_manager.SANDBOX_BACKENDS
+                    owner = getattr(user, "user_id", user)
+                    had_sandbox = owner in sandbox_manager.SANDBOX_BACKENDS
                     old_binding = None
                     proxy = None
                     try:
                         if not had_sandbox:
-                            old_binding = await sandbox_manager._sandbox_storage().get_sandbox(user)
+                            old_binding = await sandbox_manager._sandbox_storage().get_sandbox(owner)
                         with preparation_measure(PREPARATION_STAGE, "sandbox", deadline=deadline):
-                            proxy = await sandbox_manager.ensure_sandbox_for_user(user)
-                        fingerprint = self.fingerprint()
+                            proxy = await sandbox_manager.ensure_sandbox_for_user(owner)
+                        fingerprint = self._fingerprint(user)
                         with preparation_measure(PREPARATION_STAGE, "graph", deadline=deadline):
                             graph = await self.build(user, proxy)
                         entry = GraphEntry(user, graph, proxy, getattr(proxy, "generation", 0),
@@ -168,10 +172,14 @@ class RuntimePreparation:
                         self.entries.append(entry)
                         return entry
                     except BaseException:
-                        assigned = sandbox_manager.SANDBOX_BACKENDS.get(user)
+                        assigned = sandbox_manager.SANDBOX_BACKENDS.get(owner)
+                        shared = any(e.proxy is assigned for e in self.entries) or any(
+                            key != user and getattr(key, "user_id", key) == owner
+                            for key in self.pending)
                         if (not had_sandbox and assigned is not None
+                                and not shared
                                 and assigned.id != (old_binding or {}).get("sandbox_id")):
-                            await sandbox_manager.cleanup_user(user)
+                            await sandbox_manager.cleanup_user(owner)
                         raise
                     finally:
                         self.reserved -= 1

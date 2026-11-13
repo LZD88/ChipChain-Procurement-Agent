@@ -5,7 +5,7 @@ from __future__ import annotations
 from prometheus_client import Counter, Histogram
 
 
-EXECUTION_MODES = frozenset({"rule-contract", "workflow-safety"})
+EXECUTION_MODES = frozenset({"rule-contract", "workflow-safety", "prompt-candidate"})
 TERMINAL_STATUSES = frozenset({"COMPLETED", "FAILED", "PARTIAL", "CANCELLED", "TIMED_OUT"})
 ENVIRONMENTS = frozenset({"local", "ci", "staging", "isolated-test"})
 LABELS = ("execution_mode", "status", "environment")

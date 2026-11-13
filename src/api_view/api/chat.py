@@ -37,6 +37,8 @@ from api_view.observability import StreamObservation, REQUEST_ROUTES, CLASSIFIER
 from agent.request_routing import route_request
 from agent.request_classifier import resolve_request_route
 from agent.runtime_config import RuntimeConfig
+from agent.prompt_releases.repository import PromptRepository, enabled as prompt_releases_enabled, ReleaseConflict
+from agent.prompt_releases.usage import UsageRecorder
 
 
 # 创建路由
@@ -293,6 +295,7 @@ async def record_hitl_approval_requests(
     thread_id: str,
     user_id: str,
     action_requests: list[dict],
+    prompt_metadata: dict | None = None,
 ) -> int:
     """Persist owner-scoped approval requests before exposing the approval UI."""
     recorded = 0
@@ -313,6 +316,7 @@ async def record_hitl_approval_requests(
                 "approvalRequestId": approval["approval_id"],
                 "threadId": thread_id,
                 "action": "order_create",
+                **(prompt_metadata or {}),
             },
         )
         recorded += 1
@@ -349,6 +353,7 @@ async def record_hitl_resume_events(
                 "approvalRequestId": approval_id,
                 "threadId": thread_id,
                 "decision": decision_type,
+                **{key: value for key, value in (approval.get("payload") or {}).items() if key in {"promptVersion", "promptFingerprint", "promptReleaseRevision"}},
             },
         )
         if not appended:
@@ -359,14 +364,15 @@ async def record_hitl_resume_events(
 # 流式对话核心逻辑
 # ============================================================
 
-async def prepare_agent(user_id: str, thread_id: str, endpoint="chat"):
+async def prepare_agent(user_id: str, thread_id: str, endpoint="chat", prompt_snapshot=None):
     """Bound this request's acquisition; shared preparation owns its lifecycle."""
     yield create_sse_message({
         "type": "progress", "stage": "preparing",
         "message": "正在连接采购分析环境…", "thread_id": thread_id,
     }), None
     started = asyncio.get_running_loop().time()
-    preparation = asyncio.create_task(agent_loader.get_agent_for_user(user_id, endpoint=endpoint))
+    options = {"prompt_snapshot": prompt_snapshot} if prompt_snapshot else {}
+    preparation = asyncio.create_task(agent_loader.get_agent_for_user(user_id, endpoint=endpoint, **options))
     delivered = False
     try:
         async with asyncio.timeout(AGENT_PREPARATION_TIMEOUT_SECONDS):
@@ -402,6 +408,7 @@ async def stream_chat_response(
     *,
     user_id: str,
     direct_response: str | None = None,
+    prompt_admission: dict | None = None,
 ) -> AsyncIterator[str]:
     """
     流式生成对话响应，支持 Human-in-the-Loop 中断与恢复。
@@ -426,6 +433,26 @@ async def stream_chat_response(
     if direct_response is not None:
         context["guardrail_response"] = direct_response
     config = agent_loader.create_config(thread_id, user_id=user_id)
+    prompt_snapshot = (prompt_admission or {}).get("snapshot")
+    usage_recorder = UsageRecorder() if prompt_admission else None
+    if prompt_admission:
+        config["metadata"] = {"promptVersion": prompt_snapshot.version if prompt_snapshot else None,
+                              "promptFingerprint": prompt_snapshot.fingerprint if prompt_snapshot else None,
+                              "promptReleaseRevision": prompt_admission["revision"]}
+        config["callbacks"] = [usage_recorder]
+
+    from agent.platform.runtime import pin_configuration, reset_configuration, runtime_configuration
+    from agent.platform.telemetry import langfuse_integration
+    runtime_token = pin_configuration()
+    model_snapshot = runtime_configuration.snapshot()
+    config.setdefault("metadata", {}).update(modelConfigRevision=model_snapshot.revision,
+                                              modelConfigFingerprint=model_snapshot.fingerprint)
+    trace_handle = langfuse_integration.begin(name=f"chat.{endpoint}",
+        request_id=(prompt_admission or {}).get("requestId") or str(uuid.uuid4()),
+        thread_id=thread_id, user_id=user_id, bundle=prompt_snapshot,
+        metadata={**config["metadata"], "route": route_mode})
+    if trace_handle.handler:
+        config.setdefault("callbacks", []).append(trace_handle.handler)
 
     collected_content = ""
     # 工具调用表：按 LLM 的 tool_call_id 关联（ToolMessage.tool_call_id 用于结果匹配）
@@ -435,32 +462,34 @@ async def stream_chat_response(
     # 子代理名称栈：task 工具声明子代理后入栈，结果返回后出栈（支持嵌套）
     subagent_stack = []
 
-    # ---- 根据模式构建 input 和 display_messages ----
-    if resume_data is not None:
-        # 恢复模式：加载已有展示消息，用 Command(resume=...) 恢复
-        existing = await agent_loader.get_display_messages(thread_id) or []
-        display_messages = existing
-        current_input = Command(resume=resume_data)
-    else:
-        # 包含已有历史；新会话由端点预存的问题只保留一份。
-        current_input = {"messages": [{"role": "user", "content": message}]}
-        display_messages = list(await agent_loader.get_display_messages(thread_id) or [])
-        if not (display_messages and display_messages[-1].get("role") == "user"
-                and display_messages[-1].get("content") == message):
-            display_messages.append({
-                "id": f"user-{uuid.uuid4()}",
-                "role": "user",
-                "content": message,
-            })
-
-    # 创建调试日志文件
-    debug_log = get_debug_log_path(thread_id)
-
-    def _last_display_is_assistant():
-        return (display_messages and
-                display_messages[-1]["role"] == "assistant")
-
+    display_messages = []
+    debug_log = None
     try:
+        # ---- 根据模式构建 input 和 display_messages ----
+        if resume_data is not None:
+            # 恢复模式：加载已有展示消息，用 Command(resume=...) 恢复
+            existing = await agent_loader.get_display_messages(thread_id) or []
+            display_messages = existing
+            current_input = Command(resume=resume_data)
+        else:
+            # 包含已有历史；新会话由端点预存的问题只保留一份。
+            current_input = {"messages": [{"role": "user", "content": message}]}
+            display_messages = list(await agent_loader.get_display_messages(thread_id) or [])
+            if not (display_messages and display_messages[-1].get("role") == "user"
+                    and display_messages[-1].get("content") == message):
+                display_messages.append({
+                    "id": f"user-{uuid.uuid4()}",
+                    "role": "user",
+                    "content": message,
+                })
+
+        # 创建调试日志文件
+        debug_log = get_debug_log_path(thread_id)
+
+        def _last_display_is_assistant():
+            return (display_messages and
+                    display_messages[-1]["role"] == "assistant")
+
         write_debug_log(debug_log, "STREAM_START", {
             "message": message,
             "thread_id": thread_id,
@@ -495,13 +524,20 @@ async def stream_chat_response(
             route_mode = route.mode
             observation.route = route_mode
         REQUEST_ROUTES.labels(route_mode, "guardrail" if route_mode == "direct" else route.reason).inc()
+        if prompt_admission:
+            yield create_sse_message({"type": "prompt_version", "version": prompt_snapshot.version if prompt_snapshot else None,
+                                      "request_id": prompt_admission["requestId"], "cohort": prompt_admission["cohort"],
+                                      "release_revision": prompt_admission["revision"], "thread_id": thread_id})
 
         if direct_response is not None and resume_data is None:
             agent_graph = agent_loader.get_direct_response_agent(direct_response)
         elif route.mode == "lightweight":
-            agent_graph = agent_loader.get_lightweight_agent()
+            agent_graph = (agent_loader.get_lightweight_agent(prompt_snapshot=prompt_snapshot)
+                           if prompt_snapshot else agent_loader.get_lightweight_agent())
         else:
-            async with aclosing(prepare_agent(user_id, thread_id, endpoint)) as preparation_stream:
+            preparation = (prepare_agent(user_id, thread_id, endpoint, prompt_snapshot=prompt_snapshot)
+                           if prompt_snapshot else prepare_agent(user_id, thread_id, endpoint))
+            async with aclosing(preparation) as preparation_stream:
                 async for progress, prepared_graph in preparation_stream:
                     if progress is not None:
                         yield progress
@@ -546,6 +582,7 @@ async def stream_chat_response(
                             thread_id=thread_id,
                             user_id=user_id,
                             action_requests=interrupt_value["action_requests"],
+                            **({"prompt_metadata": config.get("metadata")} if prompt_admission else {}),
                         )
                         yield create_sse_message({
                             "type": "interrupt",
@@ -888,15 +925,40 @@ async def stream_chat_response(
         })
         observation.finish("failure")
     finally:
+        trace_handle.finish(observation.outcome, output=collected_content,
+                            metadata={"route": route_mode})
+        reset_configuration(runtime_token)
         if isinstance(agent_graph, GraphLease):
             await agent_graph.release()
         # 客户端中途断开时异步生成器会直接关闭，也要归还活跃请求计数。
         observation.finish("cancelled")
+        if prompt_admission:
+            await PromptRepository(mysql_storage).finalize(
+                prompt_admission, observation.outcome, {**usage_recorder.result(), "route": route_mode,
+                    "modelConfigRevision": model_snapshot.revision,
+                    "modelConfigFingerprint": model_snapshot.fingerprint,
+                    "langfuseTraceId": trace_handle.trace_id})
+
 
 
 # ============================================================
 # API 端点
 # ============================================================
+
+async def admit_prompt_request(thread_id, user_id, message=None, *, direct=False, resume=False):
+    if not prompt_releases_enabled():
+        if not resume:
+            return None
+        binding = await PromptRepository(mysql_storage).binding(thread_id)
+        if not binding or not binding.get("pending"):
+            return None
+    route = "direct" if direct else route_request(message, enabled=RuntimeConfig.from_env().request_routing_enabled, resume=resume).mode
+    try:
+        return await PromptRepository(mysql_storage).admit(thread_id, user_id, route, resume=resume)
+    except ReleaseConflict as exc:
+        raise HTTPException(409, detail=str(exc)) from None
+    except Exception:
+        raise HTTPException(503, detail="提示词版本暂不可用，请稍后重试；尚未执行模型或业务操作。") from None
 
 @router.post("/chat/stream")
 async def chat_stream(request: ChatRequest, user_id: str = Depends(require_user)):
@@ -931,10 +993,12 @@ async def chat_stream(request: ChatRequest, user_id: str = Depends(require_user)
             "content": request.message,
         }])
 
+    admission = await admit_prompt_request(thread_id, user_id, request.message, direct=direct_response is not None)
     return StreamingResponse(
         stream_chat_response(
             message=request.message, thread_id=thread_id, user_id=user_id,
             direct_response=direct_response,
+            **({"prompt_admission": admission} if admission else {}),
         ),
         media_type="text/event-stream",  # text/json, text/html, image/jpg
         headers={
@@ -960,6 +1024,7 @@ async def chat_resume(thread_id: str, request: ResumeRequest, user_id: str = Dep
     except InputSafetyError as exc:
         raise HTTPException(exc.status_code, detail={"code": exc.code, "message": exc.message}) from None
 
+    admission = await admit_prompt_request(thread_id, user_id, resume=True)
     decisions = request.resume.get("decisions")
     if decisions is not None:
         try:
@@ -970,10 +1035,13 @@ async def chat_resume(thread_id: str, request: ResumeRequest, user_id: str = Dep
                 decisions=decisions,
             )
         except ValueError as exc:
+            if admission:
+                await PromptRepository(mysql_storage).finalize(admission, "interrupted", {"reason": "approval_resume_rejected"})
             raise HTTPException(status_code=409, detail=str(exc)) from None
 
     return StreamingResponse(
-        stream_chat_response(thread_id=thread_id, resume_data=request.resume, user_id=user_id),
+        stream_chat_response(thread_id=thread_id, resume_data=request.resume, user_id=user_id,
+                             **({"prompt_admission": admission} if admission else {})),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

@@ -42,13 +42,13 @@ def calculate_metrics(report, *, input_cost_per_1k=None, output_cost_per_1k=None
     mode = report.get("executionMode") or report.get("manifest", {}).get("executionMode")
     metrics = [
         _rate("hard_constraint_pass_rate", cases,
-              {"candidate_eligible", "rejection_reason_contains"}, mode),
+              {"candidate_eligible", "rejection_reason_contains", "business_contract"}, mode),
         _rate("expected_recommendation_agreement", cases,
               {"recommended_part_equals"}, mode),
         _rate("deterministic_repeatability", cases,
               {"deterministic_repeatability"}, mode),
         _rate("unsafe_write_prevention", cases,
-              {"unsafe_write_count_equals"}, mode),
+              {"unsafe_write_count_equals", "boundary_compliant"}, mode),
         _rate("approval_boundary_compliance", cases,
               {"approval_required"}, mode),
     ]
@@ -71,7 +71,7 @@ def calculate_metrics(report, *, input_cost_per_1k=None, output_cost_per_1k=None
         },
         "status": "NOT_AVAILABLE" if not latencies else "MEASURED",
     })
-    telemetry = [case["usage"] for case in cases if isinstance(case.get("usage"), dict)]
+    telemetry = [usage for case in cases if isinstance(usage := case.get("usage") or (case.get("result") or {}).get("usage"), dict) and usage.get("inputTokens") is not None and usage.get("outputTokens") is not None]
     input_tokens = sum(item.get("inputTokens", 0) for item in telemetry)
     output_tokens = sum(item.get("outputTokens", 0) for item in telemetry)
     metrics.append({

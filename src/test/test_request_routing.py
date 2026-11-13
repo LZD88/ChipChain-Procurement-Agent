@@ -140,6 +140,7 @@ async def test_pending_interrupt_is_detected_until_original_graph_is_resumed():
 
 @pytest.mark.asyncio
 async def test_auth_defers_user_sandbox_preparation_until_routing_needs_it(monkeypatch):
+    monkeypatch.setenv("AGENT_PROMPT_RELEASES_ENABLED", "false")
     loader = AgentLoader()
     loader._initialized = True
     runtime = Mock()

@@ -29,6 +29,12 @@ class EvaluationRepository:
     def __init__(self, storage):
         self.storage = storage
 
+    async def _require_legacy_write(self, cur, run_id):
+        await cur.execute("SELECT execution_mode,finished_at FROM evaluation_runs WHERE run_id=%s FOR UPDATE", (run_id,))
+        row = await cur.fetchone()
+        if row and row["execution_mode"] in {"prompt-candidate", "experiment"}:
+            raise EvaluationConflictError("prompt-candidate writes require a live worker claim")
+
     async def publish(self, published: PublishedSuite, *, now=None) -> None:
         now = now or datetime.now(timezone.utc).replace(tzinfo=None)
         suite = published.suite
@@ -98,7 +104,7 @@ class EvaluationRepository:
         async with self.storage.cursor() as cur:
             await cur.execute(
                 "SELECT run_id,suite_id,suite_version,requested_by,execution_mode,status,"
-                "created_at,started_at,finished_at,cancel_requested_at FROM evaluation_runs" + where +
+                "created_at,started_at,finished_at,cancel_requested_at,manifest_json FROM evaluation_runs" + where +
                 " ORDER BY created_at DESC,run_id LIMIT %s OFFSET %s",
                 tuple(parameters),
             )
@@ -109,6 +115,7 @@ class EvaluationRepository:
         now = now or datetime.now(timezone.utc).replace(tzinfo=None)
         terminal = status in {"PASSED", "FAILED", "TIMED_OUT", "SETUP_ERROR", "DEPENDENCY_ERROR", "CANCELLED"}
         async with self.storage.cursor(transaction=True) as cur:
+            await self._require_legacy_write(cur, run_id)
             await cur.execute(
                 "INSERT INTO evaluation_cases "
                 "(run_id,scenario_id,repetition,status,input_json,output_json,diagnostic_json,duration_ms,created_at,finished_at) "
@@ -125,6 +132,7 @@ class EvaluationRepository:
     async def write_assertion(self, *, run_id, scenario_id, repetition, index,
                               assertion_type, status, expected, actual, diagnostic=None):
         async with self.storage.cursor(transaction=True) as cur:
+            await self._require_legacy_write(cur, run_id)
             await cur.execute(
                 "INSERT INTO evaluation_assertion_results "
                 "(run_id,scenario_id,repetition,assertion_index,assertion_type,status,"
@@ -141,6 +149,7 @@ class EvaluationRepository:
         now = now or datetime.now(timezone.utc).replace(tzinfo=None)
         observation = None
         async with self.storage.cursor(transaction=True) as cur:
+            await self._require_legacy_write(cur, run_id)
             await cur.execute(
                 "SELECT execution_mode,manifest_json,started_at,created_at FROM evaluation_runs "
                 "WHERE run_id=%s AND finished_at IS NULL FOR UPDATE",
@@ -176,9 +185,9 @@ class EvaluationRepository:
         now = now or datetime.now(timezone.utc).replace(tzinfo=None)
         async with self.storage.cursor(transaction=True) as cur:
             await cur.execute(
-                "UPDATE evaluation_runs SET cancel_requested_at=%s "
+                "UPDATE evaluation_runs SET cancel_requested_at=%s,finished_at=IF(status='QUEUED',%s,finished_at),status=IF(status='QUEUED','CANCELLED',status) "
                 "WHERE run_id=%s AND status IN ('QUEUED','RUNNING') AND cancel_requested_at IS NULL",
-                (now, run_id),
+                (now, now, run_id),
             )
             return cur.rowcount == 1
 
@@ -260,6 +269,8 @@ class EvaluationRepository:
                 "assertions": assertions.get((row["scenario_id"], row["repetition"]), []),
             })
         aggregate = run.get("result") or {}
+        suite_row = await self.get_suite(run["suite_id"], run["suite_version"])
+        expected = sum(s.get("repetitions", 1) for s in (suite_row or {}).get("suite", {}).get("scenarios", []) if s["executionMode"] == run["execution_mode"])
         return {
             "runId": run["run_id"],
             "suiteId": run["suite_id"],
@@ -274,6 +285,8 @@ class EvaluationRepository:
             "createdAt": run.get("created_at"),
             "startedAt": run.get("started_at"),
             "finishedAt": run.get("finished_at"),
+            "cancelRequestedAt": run.get("cancel_requested_at"),
+            "progress": {"completed": len(cases), "total": expected},
         }
 
     async def get_baseline(self, *, suite_id: str, execution_mode: str):
@@ -298,6 +311,17 @@ class EvaluationRepository:
             )
 
     async def claim_next_run(self, *, worker_id: str, lease_seconds: int = 60, now=None):
+        # Serialize queue admission across worker processes, then commit before unlock.
+        async with self.storage.cursor() as guard:
+            await guard.execute("SELECT GET_LOCK(CONCAT(DATABASE(),':evaluation-claim'),5) AS acquired")
+            if not (await guard.fetchone())["acquired"]:
+                return None
+            try:
+                return await self._claim_next_run(worker_id=worker_id, lease_seconds=lease_seconds, now=now)
+            finally:
+                await guard.execute("SELECT RELEASE_LOCK(CONCAT(DATABASE(),':evaluation-claim'))")
+
+    async def _claim_next_run(self, *, worker_id: str, lease_seconds: int = 60, now=None):
         if not worker_id or lease_seconds < 5 or lease_seconds > 3600:
             raise ValueError("invalid evaluation worker lease")
         now = now or datetime.now(timezone.utc).replace(tzinfo=None)
@@ -305,7 +329,8 @@ class EvaluationRepository:
         async with self.storage.cursor(transaction=True) as cur:
             await cur.execute(
                 "SELECT run_id FROM evaluation_runs WHERE status='QUEUED' "
-                "AND cancel_requested_at IS NULL ORDER BY created_at,run_id "
+                "AND cancel_requested_at IS NULL AND (execution_mode NOT IN ('prompt-candidate','experiment') OR NOT EXISTS "
+                "(SELECT 1 FROM evaluation_runs active WHERE active.execution_mode IN ('prompt-candidate','experiment') AND active.status='RUNNING')) ORDER BY created_at,run_id "
                 "LIMIT 1 FOR UPDATE SKIP LOCKED"
             )
             row = await cur.fetchone()
@@ -325,10 +350,31 @@ class EvaluationRepository:
         async with self.storage.cursor(transaction=True) as cur:
             await cur.execute(
                 "UPDATE evaluation_runs SET lease_expires_at=%s WHERE run_id=%s "
-                "AND status='RUNNING' AND lease_owner=%s AND cancel_requested_at IS NULL",
-                (now + timedelta(seconds=lease_seconds), run_id, worker_id),
+                "AND status='RUNNING' AND lease_owner=%s AND cancel_requested_at IS NULL AND lease_expires_at>%s",
+                (now + timedelta(seconds=lease_seconds), run_id, worker_id, now),
             )
             return cur.rowcount == 1
+
+    async def persist_candidate(self, run_id, claim_token, *, case=None, report=None, status=None):
+        """A claim fence covers every case and the terminal evidence transaction."""
+        from agent.prompt_releases.bundles import digest
+        async with self.storage.cursor(transaction=True) as cur:
+            await cur.execute("SELECT run_id,cancel_requested_at FROM evaluation_runs WHERE run_id=%s AND execution_mode IN ('prompt-candidate','experiment') AND status='RUNNING' AND lease_owner=%s AND lease_expires_at>UTC_TIMESTAMP(6) FOR UPDATE", (run_id, claim_token))
+            active = await cur.fetchone()
+            if not active:
+                raise EvaluationConflictError("worker claim expired or evidence already frozen")
+            if active["cancel_requested_at"] is not None:
+                status, report, case = "CANCELLED", {"incomplete": True, "reason": "cancelled"}, None
+            if case:
+                await cur.execute("INSERT INTO evaluation_cases(run_id,scenario_id,repetition,status,input_json,output_json,duration_ms,created_at,finished_at) VALUES(%s,%s,%s,%s,%s,%s,%s,UTC_TIMESTAMP(6),UTC_TIMESTAMP(6)) ON DUPLICATE KEY UPDATE status=VALUES(status),output_json=VALUES(output_json),duration_ms=VALUES(duration_ms),finished_at=VALUES(finished_at)",
+                    (run_id, case["scenarioId"], case["repetition"], case["status"], _json(case.get("input", {"fixture": case["scenarioId"]})), _json(case.get("result")), case.get("durationMs")))
+                await cur.execute("DELETE FROM evaluation_assertion_results WHERE run_id=%s AND scenario_id=%s AND repetition=%s", (run_id, case["scenarioId"], case["repetition"]))
+                for index, assertion in enumerate(case.get("assertions", [])):
+                    await cur.execute("INSERT INTO evaluation_assertion_results(run_id,scenario_id,repetition,assertion_index,assertion_type,status,expected_json,actual_json,diagnostic) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                        (run_id, case["scenarioId"], case["repetition"], index, assertion["type"], assertion["status"], _json(assertion.get("expected")), _json(assertion.get("actual")), assertion.get("diagnostic")))
+            if status:
+                await cur.execute("UPDATE evaluation_runs SET status=%s,result_json=%s,finished_at=UTC_TIMESTAMP(6),lease_owner=NULL,lease_expires_at=NULL WHERE run_id=%s", (status, _json(report or {}), run_id))
+            return status != "CANCELLED"
 
     async def recover_expired_leases(self, *, now=None, limit: int = 100):
         now = now or datetime.now(timezone.utc).replace(tzinfo=None)
@@ -344,10 +390,10 @@ class EvaluationRepository:
             ids = [row["run_id"] for row in rows]
             for run_id in ids:
                 await cur.execute(
-                    "UPDATE evaluation_runs SET status='QUEUED',lease_owner=NULL,lease_expires_at=NULL,"
+                    "UPDATE evaluation_runs SET status=IF(cancel_requested_at IS NULL,'QUEUED','CANCELLED'),finished_at=IF(cancel_requested_at IS NULL,NULL,%s),lease_owner=NULL,lease_expires_at=NULL,"
                     "result_json=JSON_OBJECT('incomplete',TRUE,'reason','worker_lease_expired') "
                     "WHERE run_id=%s AND status='RUNNING' AND lease_expires_at<%s",
-                    (run_id, now),
+                    (now, run_id, now),
                 )
             return ids
 

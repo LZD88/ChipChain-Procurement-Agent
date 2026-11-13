@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from agent.policies.canonical import canonical_json
 
 
-ExecutionMode = Literal["rule-contract", "workflow-safety"]
+ExecutionMode = Literal["rule-contract", "workflow-safety", "prompt-candidate", "experiment"]
 AssertionType = Literal[
     "recommended_part_equals",
     "candidate_eligible",
@@ -21,6 +21,12 @@ AssertionType = Literal[
     "unsafe_write_count_equals",
     "idempotency_outcome_equals",
     "scenario_status_equals",
+    "response_nonempty",
+    "required_tool_called",
+    "role_executed",
+    "boundary_compliant",
+    "business_contract",
+    "skill_loaded",
 ]
 FORBIDDEN_EXECUTABLE_KEYS = frozenset({
     "code", "script", "python", "javascript", "command", "shell", "exec", "eval",

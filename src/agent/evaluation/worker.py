@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import os
 import socket
+from uuid import uuid4
 from dataclasses import dataclass, field
 
 import aiomysql
@@ -62,6 +63,22 @@ async def execute_run(repository: EvaluationRepository, run_id: str, *, environm
     run = await repository.get_run(run_id)
     if run is None:
         return False
+    if run["execution_mode"] in {"prompt-candidate", "experiment"}:
+        from agent.evaluation.prompt_worker import execute_candidate
+        from agent.platform.runtime import runtime_configuration, pin_configuration, reset_configuration
+        from agent.platform.telemetry import langfuse_integration, EVALUATION_RUN
+        from agent.prompt_releases.repository import PromptRepository
+        await runtime_configuration.refresh()
+        configuration_token = pin_configuration()
+        evaluation_token = EVALUATION_RUN.set(run_id)
+        try:
+            if langfuse_integration.client:
+                bundle = await PromptRepository(repository.storage).get_version(run["manifest"]["promptVersion"])
+                await asyncio.to_thread(langfuse_integration.sync_bundle, bundle)
+            return await execute_candidate(repository, run, environment=environment)
+        finally:
+            EVALUATION_RUN.reset(evaluation_token)
+            reset_configuration(configuration_token)
     if await repository.cancellation_requested(run_id):
         return await repository.finish_run(run_id, status="CANCELLED", result={
             "incomplete": True, "reason": "cancelled_before_execution", "metrics": [],
@@ -74,6 +91,12 @@ async def execute_run(repository: EvaluationRepository, run_id: str, *, environm
     suite = EvaluationSuite.model_validate(suite_row["suite"])
     _default_suite, fixtures = load_default_inputs()
     try:
+        if run["manifest"].get("runnerVersion") == "workbench-v1":
+            from agent.prompt_releases.bundles import digest, deployment_fingerprint
+            if (run["manifest"]["deploymentFingerprint"] != deployment_fingerprint()
+                    or run["manifest"]["suiteFingerprint"] != suite.content_fingerprint()
+                    or run["manifest"]["fixtureFingerprint"] != digest(fixtures)):
+                raise ValueError("queued evaluation inputs changed")
         configured_repetitions = {
             scenario.repetitions
             for scenario in suite.scenarios
@@ -134,11 +157,15 @@ async def run_worker(*, once: bool | None = None):
     worker_id = os.getenv("EVALUATION_WORKER_ID") or f"{socket.gethostname()}-{os.getpid()}"
     once = (os.getenv("EVALUATION_WORKER_ONCE", "false").lower() == "true"
             if once is None else once)
+    from agent.platform.runtime import runtime_configuration
+    from agent.platform.telemetry import langfuse_integration
+    runtime_configuration.load_cache()
+    langfuse_integration.initialize()
     try:
         while True:
             await repository.recover_expired_leases()
             run_id = await repository.claim_next_run(
-                worker_id=worker_id, lease_seconds=settings.lease_seconds,
+                worker_id=uuid4().hex, lease_seconds=settings.lease_seconds,
             )
             if run_id:
                 await execute_run(repository, run_id, environment=os.environ)
@@ -146,6 +173,8 @@ async def run_worker(*, once: bool | None = None):
                 return
             await asyncio.sleep(settings.poll_seconds)
     finally:
+        await runtime_configuration.close()
+        await asyncio.to_thread(langfuse_integration.shutdown)
         await storage.close()
 
 
@@ -153,10 +182,15 @@ def main():
     # CLI workers use the same project-level configuration as the Web and MCP
     # launchers.  Keep this in ``main`` so imported tests can still provide an
     # isolated environment explicitly.
-    from dotenv import load_dotenv
-    from agent.env_utils import PROJECT_ROOT
-
-    load_dotenv(PROJECT_ROOT / ".env", override=False, encoding="utf-8")
+    from dotenv import dotenv_values
+    from pathlib import Path
+    from agent.evaluation.workflow_runner import PRODUCTION_CREDENTIAL_KEYS
+    settings = dotenv_values(Path(__file__).resolve().parents[3] / ".env", encoding="utf-8")
+    for key, value in settings.items():
+        if value is not None and (key.startswith(("EVALUATION_", "NACOS_", "LANGFUSE_", "LLM_GATEWAY_")) or key in {"MYSQL_HOST", "MYSQL_PORT", "MYSQL_DATABASE", "DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL", "MCP_GATEWAY_ENABLED", "MCP_GATEWAY_BASE_URL"}):
+            os.environ.setdefault(key, value)
+    for key in PRODUCTION_CREDENTIAL_KEYS:
+        os.environ.pop(key, None)
     asyncio.run(run_worker())
 
 

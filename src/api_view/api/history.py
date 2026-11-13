@@ -25,6 +25,7 @@ from agent.schema import (
 from api_view.agent_loader import agent_loader
 from api_view.auth import require_same_origin_request, require_thread, require_user
 from agent.mysql_storage import mysql_storage
+from agent.prompt_releases.repository import PromptRepository, enabled as releases_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -343,7 +344,8 @@ async def get_session_messages(thread_id: str, user_id: str = Depends(require_th
 
         return SessionMessagesResponse(
             thread_id=thread_id,
-            messages=message_list
+            messages=message_list,
+            prompt_version=await PromptRepository(mysql_storage).binding(thread_id) if releases_enabled() else None,
         )
 
     except Exception as e:
