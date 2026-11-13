@@ -19,6 +19,16 @@ const result = (id, text, status = 'done') => ({ type: 'tool_result', tool_call_
 const end = id => ({ type: 'tool_end', tool_call_id: id })
 const done = { type: 'done', thread_id: 'test-thread', content: '完成' }
 
+test('请求版本事件按原样交给会话，直接回复允许版本为空', async t => {
+  const versions = []
+  t.mock.method(globalThis, 'fetch', async () => streamResponse([
+    { type: 'prompt_version', version: 'v2', request_id: 'request-1', cohort: 'canary', thread_id: 't1' }, done,
+  ]))
+  await streamChat('查询库存', null, { onPromptVersion: data => versions.push(data) })
+  assert.equal(versions[0].version, 'v2')
+  assert.equal(versions[0].request_id, 'request-1')
+})
+
 test('服务端创建会话后立即回传 ID，不必等待模型完成', async t => {
   t.mock.method(globalThis, 'fetch', async () => streamResponse([
     { type: 'session', thread_id: 'project-thread' },

@@ -13,6 +13,14 @@
         <span class="shortcut">Ctrl N</span>
       </button>
 
+      <nav class="workspace-tools" aria-label="工作台功能">
+        <a class="release-entry" href="#prompt-releases" title="提示词版本、评测与发布">
+          <span class="release-entry-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></svg></span>
+          <span class="release-entry-copy"><strong>提示词发布</strong><small>版本 · 评测 · 灰度 · 回滚</small></span>
+          <svg class="release-entry-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+        </a>
+      </nav>
+
       <label class="search-box">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 4 4"/></svg>
         <input v-model.trim="searchKeyword" type="search" placeholder="搜索项目或会话" aria-label="搜索项目或会话" />
@@ -417,8 +425,10 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.sidebar { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; position: relative; background: var(--nav-bg); color: var(--nav-text); }
+.sidebar { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; position: relative; background: var(--nav-bg); color: var(--nav-text); font-family: "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif; font-synthesis: none; -webkit-font-smoothing: auto; text-rendering: auto; }
+.sidebar button, .sidebar input { font-family: inherit; }
 .sidebar-header { padding: 18px 14px 14px; }
+.sidebar-header, .sidebar-footer { flex-shrink: 0; }
 .brand-row { display: flex; align-items: center; gap: 9px; margin: 0 0 22px; }
 .sidebar-toggle { display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 32px; margin-left: auto; padding: 5px; border: 0; border-radius: 7px; background: transparent; color: var(--nav-muted); cursor: pointer; }
 .sidebar-toggle:hover { background: var(--nav-hover); color: var(--nav-text); }
@@ -433,6 +443,17 @@ onBeforeUnmount(() => {
 .new-chat-btn:hover { transform: translateY(-1px); background: var(--color-primary-hover); box-shadow: 0 8px 16px rgba(0, 0, 0, .14); }
 .new-chat-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .shortcut { margin-left: auto; color: var(--nav-accent); font-size: 9px; font-weight: 500; letter-spacing: .04em; }
+.workspace-tools { margin-top: 10px; }
+.release-entry { display: flex; align-items: center; gap: 10px; min-height: 62px; padding: 11px; border: 1px solid var(--nav-border); border-radius: 11px; background: var(--nav-surface); color: var(--nav-text); text-decoration: none; transition: background .16s ease, border-color .16s ease; }
+.release-entry:hover { background: var(--nav-active); border-color: var(--nav-accent); }
+.release-entry:focus-visible { outline: 2px solid var(--nav-accent); outline-offset: 3px; }
+.release-entry-icon { display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 32px; border-radius: 9px; background: var(--nav-active); color: var(--nav-accent); }
+.release-entry svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.release-entry-icon svg { width: 21px; height: 21px; }
+.release-entry-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 5px; }
+.release-entry-copy strong { color: var(--nav-text); font-size: 13px; font-weight: 650; }
+.release-entry-copy small { color: var(--nav-muted); font-size: 10px; line-height: 1.4; }
+.release-entry-arrow { width: 15px; height: 15px; flex: 0 0 15px; color: var(--nav-accent); }
 .search-box { display: flex; align-items: center; gap: 8px; margin-top: 11px; padding: 9px 11px; border: 1px solid var(--nav-border); border-radius: 10px; background: var(--nav-surface); transition: .16s ease; }
 .search-box:focus-within { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(22, 134, 109, .16); }
 .search-box svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: var(--nav-muted); stroke-width: 1.8; stroke-linecap: round; }
@@ -445,6 +466,7 @@ onBeforeUnmount(() => {
 .section-heading { display: flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 8px; color: var(--nav-muted); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .section-heading button { display: grid; width: 25px; height: 25px; margin-left: auto; place-items: center; border: 0; border-radius: 7px; background: transparent; color: var(--nav-muted); cursor: pointer; font-size: 18px; line-height: 1; }
 .section-heading button:hover { background: var(--nav-hover); color: var(--nav-accent); }
+.section-heading button:focus-visible, .create-first-project:focus-visible { outline: 2px solid #adf2db; outline-offset: 3px; }
 .section-heading em { margin-left: auto; font-style: normal; letter-spacing: 0; }
 .project-block { margin: 2px 0 7px; }
 .project-row { display: flex; align-items: center; gap: 3px; border-radius: 10px; }

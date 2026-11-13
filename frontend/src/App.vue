@@ -2,7 +2,8 @@
   <div v-if="checking" class="session-loading" role="status"><span class="session-spinner"></span>正在打开工作台…</div>
   <template v-else-if="user">
     <div v-if="error" class="account-error" role="alert">{{ error }} <button @click="error = ''" aria-label="关闭提示">×</button></div>
-    <ChatWorkspace :key="user.username" :user="user" :logging-out="loggingOut" @logout="handleLogout" />
+    <PromptReleases v-if="hash === '#prompt-releases'" />
+    <ChatWorkspace v-else :key="user.username" :user="user" :logging-out="loggingOut" @logout="handleLogout" />
   </template>
   <AuthPage v-else :notice="error" @authenticated="handleAuthenticated" />
 </template>
@@ -11,9 +12,12 @@
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 import AuthPage from './components/AuthPage.vue'
 import ChatWorkspace from './ChatWorkspace.vue'
+import PromptReleases from './components/PromptReleases.vue'
 import { currentUser, logout } from './api/auth.js'
 
 const checking = ref(true)
+const hash = ref(window.location.hash)
+const changeHash = () => { hash.value = window.location.hash }
 const user = ref(null)
 const error = ref('')
 const loggingOut = ref(false)
@@ -40,12 +44,14 @@ async function handleLogout() {
   }
 }
 onMounted(async () => {
+  window.addEventListener('hashchange', changeHash)
   window.addEventListener('auth:expired', sessionExpired)
   try { user.value = await currentUser() }
   catch (cause) { if (cause.status !== 401) error.value = '暂时无法连接服务，请稍后重试。' }
   finally { checking.value = false }
 })
 onBeforeUnmount(() => window.removeEventListener('auth:expired', sessionExpired))
+onBeforeUnmount(() => window.removeEventListener('hashchange', changeHash))
 </script>
 
 <style scoped>

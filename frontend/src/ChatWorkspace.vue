@@ -69,6 +69,7 @@
         <div class="workspace-title"><span v-if="activeProject" class="workspace-project">{{ activeProject.name }}<span aria-hidden="true">/</span></span><strong :title="activeSession?.title || '新会话'">{{ activeSession?.title || '新会话' }}</strong></div>
         <button class="workspace-icon-button header-new-chat" type="button" aria-label="新建会话" title="新建会话" @click="handleNewChat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-7M16 3h5v5M11 13 21 3"/></svg></button>
         <button class="evidence-button" type="button" @click="openEvidence">决策证据</button>
+        <span v-if="currentConversation.promptVersion" style="font-size:12px;color:#16866d;max-width:180px;overflow-wrap:anywhere" :title="`请求 ${currentConversation.promptVersion.request_id} · 修订 ${currentConversation.promptVersion.release_revision}`">{{ interruptData ? '审批版本' : '执行版本' }}：{{ currentConversation.promptVersion.version || '直接回复' }}</span>
       </header>
       <!-- 对话区域 -->
       <ChatArea

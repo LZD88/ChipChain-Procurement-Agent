@@ -12,7 +12,7 @@ export function createConversations({ streamChat, resumeChat, getMessages, onSes
   function create(threadId = null, projectId = null) {
     const key = id('conversation')
     conversations.set(key, {
-      key, threadId, projectId, messages: [], draft: '', interruptData: null,
+      key, threadId, projectId, messages: [], draft: '', interruptData: null, promptVersion: null,
       isStreaming: false, isResuming: false, processingStatus: '', status: 'idle',
       unread: false, loaded: !threadId, loading: false, revision: 0, run: null,
       updatedAt: new Date().toISOString(),
@@ -44,6 +44,7 @@ export function createConversations({ streamChat, resumeChat, getMessages, onSes
       // 历史请求可能晚于新一轮回复返回，不能覆盖已经更新的消息。
       if (!disposed && conversations.has(state.key) && state.revision === revision && !state.run) {
         state.messages = response.messages || []
+        if (response.prompt_version) state.promptVersion = response.prompt_version
         state.loaded = true
       }
     } catch (error) {
@@ -92,6 +93,7 @@ export function createConversations({ streamChat, resumeChat, getMessages, onSes
     const active = () => !disposed && state.run === run && conversations.has(state.key)
     const notify = () => { if (currentKey.value !== state.key) state.unread = true }
     const callbacks = {
+      onPromptVersion: data => { state.promptVersion = data },
       onSession: data => bindThread(state, data.thread_id),
       onProgress: data => { state.processingStatus = data.message || '正在处理采购任务…' },
       onToken(content, source = 'main') {

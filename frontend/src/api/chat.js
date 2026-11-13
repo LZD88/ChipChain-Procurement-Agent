@@ -46,6 +46,9 @@ async function requestStream(url, body, threadId, callbacks, signal) {
       catch { return null } // 仅跳过无效 JSON；服务端 error 事件必须交给调用方。
       if (data.thread_id) state.thread_id = data.thread_id
       switch (data.type) {
+        case 'prompt_version':
+          callbacks.onPromptVersion?.(data)
+          break
         case 'session':
           callbacks.onSession?.({ thread_id: state.thread_id })
           break
