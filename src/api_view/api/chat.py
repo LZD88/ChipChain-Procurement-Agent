@@ -938,7 +938,15 @@ async def stream_chat_response(
                     "modelConfigRevision": model_snapshot.revision,
                     "modelConfigFingerprint": model_snapshot.fingerprint,
                     "langfuseTraceId": trace_handle.trace_id})
-
+            if observation.outcome == "failure" and message:
+                try:
+                    from agent.evaluation.online_failures import record_online_failure
+                    await record_online_failure(mysql_storage, request_id=prompt_admission["requestId"],
+                        owner=user_id, thread_id=thread_id, question=message, route=route_mode,
+                        prompt_version=prompt_snapshot.version if prompt_snapshot else None, trace_id=trace_handle.trace_id)
+                except Exception as capture_error:
+                    import logging
+                    logging.getLogger(__name__).warning("Online failure capture unavailable: %s", type(capture_error).__name__)
 
 
 # ============================================================

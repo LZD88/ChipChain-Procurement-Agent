@@ -91,7 +91,9 @@ async def test_evaluation_migration_and_repository_lifecycle():
             )
             if status == "CANCELLED":
                 assert await repository.request_cancel(run_id)
-            assert await repository.finish_run(run_id, status=status, result={"status": status})
+                assert (await repository.get_run(run_id))["status"] == "CANCELLED"
+            # Queued cancellation is already terminal; later completion cannot overwrite it.
+            assert await repository.finish_run(run_id, status=status, result={"status": status}) is (status != "CANCELLED")
             assert (await repository.get_run(run_id))["status"] == status
 
         async with storage.cursor() as cur:

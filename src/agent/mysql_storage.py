@@ -370,6 +370,10 @@ APPLICATION_DDL = {
 
 from agent.prompt_releases.ddl import DDL as PROMPT_DDL
 APPLICATION_DDL.update(PROMPT_DDL)
+from agent.evaluation.workbench import WORKBENCH_DDL
+APPLICATION_DDL.update(WORKBENCH_DDL)
+from agent.evaluation.online_failures import ONLINE_DDL
+APPLICATION_DDL.update(ONLINE_DDL)
 
 
 async def _ensure_application_tables(cur):
