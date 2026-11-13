@@ -118,11 +118,22 @@ def _build_rails(model, user_id: str, config, settings: GuardSettings, policy: I
 
     if model is None:
         model_config = config.models[0]
+        model_data = model_config.model_dump()
         api_key = get_env(model_config.api_key_env_var)
+        base_url = get_env(settings.base_url_env_var)
+        if model_config.api_key_env_var == "DEEPSEEK_API_KEY":
+            from agent.platform.gateway import model_endpoint, transport_policy
+            endpoint = model_endpoint()
+            api_key, base_url = endpoint.api_key, endpoint.base_url
+            if endpoint.via_gateway:
+                parameters = model_data["parameters"]
+                parameters.pop("openai_api_base", None)
+                parameters["base_url"] = base_url
+                parameters.update(transport_policy(endpoint))
         if not api_key:
             raise ValueError("审查模型密钥未配置")
         model = _configured_model(
-            model_config.model_dump_json(), api_key, get_env(settings.base_url_env_var),
+            json.dumps(model_data), api_key, base_url,
         )
     # 模型已按 YAML 创建，通过 LangChain 适配器注入；避免 NeMo 再创建一次。
     config.models = []

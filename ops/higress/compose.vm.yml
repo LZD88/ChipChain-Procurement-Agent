@@ -1,0 +1,22 @@
+# Linux VM only. Do not run with Docker Desktop.
+name: chipchain-higress
+services:
+  gateway:
+    image: higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/all-in-one@sha256:3e7de95ac088a0c86a78b9dd236e9cd1e970163f25a6c092ab4589c993073b87
+    restart: unless-stopped
+    mem_limit: 1800m
+    cpus: 2
+    ports: ["18881:8080", "18001:8001"]
+    environment:
+      MODE: full
+      O11Y: "off"
+      USE_PLUGIN_SERVER: "on"
+      GATEWAY_HTTP_PORT: "8080"
+      GATEWAY_HTTPS_PORT: "8443"
+      CONSOLE_PORT: "8001"
+      JAVA_OPTS: -Xms128m -Xmx384m
+      GATEWAY_COMPONENT_LOG_LEVEL: misc:error,wasm:error
+    volumes: ["./data:/data", "./logs:/var/log/proxy"]
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}

@@ -14,20 +14,12 @@ import logging
 
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from agent.env_utils import ERP_MCP_URL, ANALYSIS_MCP_URL
+from agent.platform.mcp_gateway import mcp_server_config
 
 logger = logging.getLogger(__name__)
 
 # MCP Server 连接配置
-MCP_SERVER_CONFIG = {
-    "chip-supply-api": {
-        "url": ERP_MCP_URL,
-        "transport": "streamable_http",
-    },
-    "analysis": {
-        "url": ANALYSIS_MCP_URL,
-        "transport": "streamable_http",
-    },
-}
+MCP_SERVER_CONFIG = mcp_server_config(ERP_MCP_URL, ANALYSIS_MCP_URL)
 
 # 工具分组规则（前缀匹配）
 ANALYST_TOOL_PREFIXES = ("supplier_", "part_", "inventory_", "procurement_")

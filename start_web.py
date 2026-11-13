@@ -332,6 +332,17 @@ def main():
             previous_handlers[sig] = previous
         check_ports_available()
         ensure_sandbox_runtime()
+        if any(os.getenv(flag, "false").lower() == "true" for flag in ("AI_PLATFORM_VM_ENABLED", "LLM_GATEWAY_ENABLED", "MCP_GATEWAY_ENABLED")):
+            print("[Integrations] Starting configured Nacos/Langfuse/Higress services on the Linux VM...")
+            try:
+                result = subprocess.run([sys.executable, str(PROJECT_ROOT / "scripts/start_ai_platform_vm.py")],
+                                        timeout=340)
+                integrations_ready = result.returncode == 0
+            except (subprocess.SubprocessError, OSError):
+                integrations_ready = False
+            if not integrations_ready:
+                print("[Integrations] VM integrations are unavailable; cached model parameters remain available.")
+                print("[Integrations] An enabled model gateway is never bypassed; model calls may be unavailable.")
         launch_id = uuid.uuid4().hex
         backend_proc = run_backend(launch_id)
         check_backend_ready(backend_proc, launch_id)

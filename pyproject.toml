@@ -9,6 +9,7 @@ dependencies = [
     "langchain==1.4.2",
     "langchain-core==1.6.4",
     "langchain-openai==1.1.12",
+    "langfuse==3.15.0",
     "langchain-mcp-adapters==0.2.2",
     "nemoguardrails==0.24.1",
     "langgraph==1.2.12",

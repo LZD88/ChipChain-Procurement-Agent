@@ -1,0 +1,162 @@
+# Run ONLY on the configured Linux VM. Never run this with Docker Desktop.
+name: chipchain-ai-platform
+x-logging: &logging
+  driver: json-file
+  options: {max-size: 10m, max-file: "3"}
+x-langfuse-env: &langfuse-env
+  DATABASE_URL: postgresql://chipchain:${POSTGRES_PASSWORD}@postgres:5432/langfuse
+  NEXTAUTH_URL: http://localhost:13000
+  SALT: ${LANGFUSE_SALT}
+  ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY}
+  TELEMETRY_ENABLED: "false"
+  CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
+  CLICKHOUSE_URL: http://clickhouse:8123
+  CLICKHOUSE_USER: chipchain
+  CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+  CLICKHOUSE_CLUSTER_ENABLED: "false"
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_AUTH: ${REDIS_PASSWORD}
+  LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+  LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: chipchain
+  LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_PASSWORD}
+  LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://minio:9000
+  LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+  LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+  LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+  LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: chipchain
+  LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_PASSWORD}
+  LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://localhost:19090
+  LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+  LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+  LANGFUSE_INGESTION_QUEUE_DELAY_MS: "1000"
+  LANGFUSE_INGESTION_CLICKHOUSE_WRITE_INTERVAL_MS: "1000"
+  NODE_OPTIONS: --max-old-space-size=768
+x-dependencies: &dependencies
+  postgres: {condition: service_healthy}
+  redis: {condition: service_healthy}
+  clickhouse: {condition: service_healthy}
+  minio: {condition: service_healthy}
+services:
+  nacos:
+    image: nacos/nacos-server:v2.5.1
+    restart: unless-stopped
+    mem_limit: 768m
+    logging: *logging
+    ports: ["18848:8848"]
+    environment:
+      MODE: standalone
+      PREFER_HOST_MODE: hostname
+      JVM_XMS: 256m
+      JVM_XMX: 512m
+      JVM_XMN: 128m
+      NACOS_AUTH_ENABLE: "true"
+      NACOS_AUTH_TOKEN: ${NACOS_AUTH_TOKEN}
+      NACOS_AUTH_IDENTITY_KEY: chipchain
+      NACOS_AUTH_IDENTITY_VALUE: ${NACOS_IDENTITY_VALUE}
+    volumes: [nacos_data:/home/nacos/data, nacos_logs:/home/nacos/logs]
+    healthcheck:
+      test: [CMD-SHELL, "curl -fsS http://localhost:8848/nacos/v1/console/health/readiness >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 45s
+  langfuse-web:
+    image: ghcr.io/langfuse/langfuse:3.148.0
+    restart: unless-stopped
+    mem_limit: 1200m
+    logging: *logging
+    depends_on: *dependencies
+    ports: ["13000:3000"]
+    environment:
+      <<: *langfuse-env
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET}
+      HOSTNAME: 0.0.0.0
+      AUTH_DISABLE_SIGNUP: "true"
+      LANGFUSE_INIT_ORG_ID: chipchain-local
+      LANGFUSE_INIT_ORG_NAME: ChipChain Local
+      LANGFUSE_INIT_PROJECT_ID: chipchain-agent
+      LANGFUSE_INIT_PROJECT_NAME: Procurement Agent
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_ADMIN_EMAIL}
+      LANGFUSE_INIT_USER_NAME: ChipChain Admin
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_ADMIN_PASSWORD}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3000/api/public/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 90s
+  langfuse-worker:
+    image: ghcr.io/langfuse/langfuse-worker:3.148.0
+    restart: unless-stopped
+    mem_limit: 1000m
+    logging: *logging
+    depends_on: *dependencies
+    environment:
+      <<: *langfuse-env
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://minio:9000
+  postgres:
+    image: public.ecr.aws/docker/library/postgres:17.6-alpine
+    restart: unless-stopped
+    mem_limit: 384m
+    logging: *logging
+    environment: {POSTGRES_USER: chipchain, POSTGRES_DB: langfuse, POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"}
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U chipchain -d langfuse]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: public.ecr.aws/docker/library/redis:7.4.5-alpine
+    restart: unless-stopped
+    mem_limit: 128m
+    logging: *logging
+    environment: {REDIS_PASSWORD: "${REDIS_PASSWORD}"}
+    command: [sh, -c, 'exec redis-server --requirepass "$$REDIS_PASSWORD" --maxmemory 80mb --maxmemory-policy noeviction --appendonly yes']
+    volumes: [redis_data:/data]
+    healthcheck:
+      test: [CMD-SHELL, 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.3.6.56
+    restart: unless-stopped
+    mem_limit: 1536m
+    logging: *logging
+    environment: {CLICKHOUSE_DB: default, CLICKHOUSE_USER: chipchain, CLICKHOUSE_PASSWORD: "${CLICKHOUSE_PASSWORD}"}
+    volumes: [clickhouse_data:/var/lib/clickhouse, clickhouse_logs:/var/log/clickhouse-server]
+    ulimits: {nofile: {soft: 262144, hard: 262144}}
+    healthcheck:
+      test: [CMD-SHELL, wget -qO- http://localhost:8123/ping]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  minio:
+    image: cgr.dev/chainguard/minio@sha256:96b6cf3e14084d3427ec46de10c2873af61b945ad9272eec266cfc8df551cba5
+    restart: unless-stopped
+    mem_limit: 256m
+    logging: *logging
+    entrypoint: sh
+    command: [-c, 'mkdir -p /data/langfuse; exec minio server --address :9000 /data']
+    environment: {MINIO_ROOT_USER: chipchain, MINIO_ROOT_PASSWORD: "${MINIO_PASSWORD}"}
+    volumes: [minio_data:/data]
+    ports: ["19090:9000"]
+    healthcheck:
+      test: [CMD, mc, ready, local]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+volumes:
+  nacos_data:
+  nacos_logs:
+  postgres_data:
+  redis_data:
+  clickhouse_data:
+  clickhouse_logs:
+  minio_data:

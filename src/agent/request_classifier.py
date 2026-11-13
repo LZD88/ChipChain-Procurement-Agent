@@ -35,10 +35,10 @@ def _configured_classifier(api_key: str, base_url: str, timeout: float):
 
 
 def get_request_classifier(timeout: float):
-    # Reuse the existing provider, never send its key to a different endpoint.
-    from agent.env_utils import get_env
-
-    api_key, base_url = get_env("DEEPSEEK_API_KEY"), get_env("DEEPSEEK_BASE_URL")
+    # Resolve the server-owned transport and its matching credential.
+    from agent.platform.gateway import model_endpoint
+    endpoint = model_endpoint()
+    api_key, base_url = endpoint.api_key, endpoint.base_url
     if not api_key or not base_url:
         raise ValueError("Request classifier provider is not configured")
     return _configured_classifier(api_key, base_url, timeout)

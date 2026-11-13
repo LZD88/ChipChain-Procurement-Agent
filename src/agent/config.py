@@ -2,7 +2,8 @@ from datetime import timedelta
 from pathlib import Path
 
 import httpx
-from langchain_openai import ChatOpenAI
+from agent.platform.models import RuntimeChatOpenAI
+from agent.platform.gateway import model_endpoint, transport_policy
 from langgraph.store.memory import InMemoryStore
 from opensandbox.config import ConnectionConfig
 
@@ -12,21 +13,26 @@ from agent.env_utils import (
 )
 
 # ---------- 模型配置 ----------
+MODEL_ENDPOINT = model_endpoint()
 # 主 Agent 模型
-MAIN_MODEL = ChatOpenAI(
+MAIN_MODEL = RuntimeChatOpenAI(
+    runtime_profile="main",
     model="deepseek-flash",
     temperature=0.1,
-    openai_api_key=DEEPSEEK_API_KEY,
-    openai_api_base=DEEPSEEK_BASE_URL,
+    openai_api_key=MODEL_ENDPOINT.api_key,
+    openai_api_base=MODEL_ENDPOINT.base_url,
+    **transport_policy(MODEL_ENDPOINT),
     max_tokens=30000,
     extra_body={"thinking": {"type": "disabled"}},
 )
 # 摘要专用模型（摘要需要稳定输出，temperature 设为较低值）
-SUMMARY_MODEL = ChatOpenAI(
+SUMMARY_MODEL = RuntimeChatOpenAI(
+    runtime_profile="summary",
     model="deepseek-flash",
     temperature=0.3,
-    openai_api_key=DEEPSEEK_API_KEY,
-    openai_api_base=DEEPSEEK_BASE_URL,
+    openai_api_key=MODEL_ENDPOINT.api_key,
+    openai_api_base=MODEL_ENDPOINT.base_url,
+    **transport_policy(MODEL_ENDPOINT),
     max_tokens=30000,
     extra_body={"thinking": {"type": "disabled"}},
 )
